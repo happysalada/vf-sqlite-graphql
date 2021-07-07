@@ -118,44 +118,40 @@ struct NewAgent {
 
 pub struct MutationRoot;
 
-struct Row {
-    id: Option<String>,
-}
-
 #[graphql_object(Context=Context)]
 impl MutationRoot {
     #[graphql(description = "Add new plan")]
-    async fn create_plan(context: &Context, new_plan: NewPlan) -> FieldResult<String> {
+    async fn create_plan(context: &Context, new_plan: NewPlan) -> FieldResult<Plan> {
         let ulid = Ulid::new().to_string();
-        let row = sqlx::query_as!(
-            Row,
-            r#"INSERT INTO plans (id, title, agent_id) VALUES (?, ?, ?) RETURNING id AS "id: String""#,
+        sqlx::query!(
+            "INSERT INTO plans (id, title, agent_id) VALUES (?, ?, ?)",
             ulid,
             new_plan.title,
             new_plan.agent_id
         )
-        .fetch_one(&context.pool)
+        .execute(&context.pool)
         .await?;
-        Ok(row
-            .id
-            .expect(&format!("Failed to insert plan {:?}", new_plan)))
+        let inserted_plan = sqlx::query_as!(RawPlan, "SELECT * FROM plans WHERE id = ?", ulid,)
+            .fetch_one(&context.pool)
+            .await?;
+        Ok(inserted_plan.to_graphql())
     }
 
     #[graphql(description = "Add new agent")]
-    async fn create_agent(context: &Context, new_agent: NewAgent) -> FieldResult<String> {
+    async fn create_agent(context: &Context, new_agent: NewAgent) -> FieldResult<Agent> {
         let ulid = Ulid::new().to_string();
-        let row = sqlx::query_as!(
-            Row,
-            r#"INSERT INTO agents (id, name, unique_name, email) VALUES (?, ?, ?, ?) RETURNING id AS "id: String""#,
+        sqlx::query!(
+            "INSERT INTO agents (id, name, unique_name, email) VALUES (?, ?, ?, ?)",
             ulid,
             new_agent.name,
             new_agent.name,
             new_agent.email
         )
-        .fetch_one(&context.pool)
+        .execute(&context.pool)
         .await?;
-        Ok(row
-            .id
-            .expect(&format!("Failed to insert agent {:?}", new_agent)))
+        let inserted_agent = sqlx::query_as!(RawAgent, "SELECT * FROM agents WHERE id = ?", ulid,)
+            .fetch_one(&context.pool)
+            .await?;
+        Ok(inserted_agent.to_graphql())
     }
 }
