@@ -10,12 +10,19 @@
   outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlays = [ (import rust-overlay) ];
+        package_overlay = final: prev: {
+          vf-graphql-sqlite-backend = import ./package.nix { pkgs = final; inherit self; };
+        };
+        overlays = [ (import rust-overlay) package_overlay ];
         pkgs = import nixpkgs {
           inherit system overlays;
         };
       in
       {
+        packages = {
+          inherit (pkgs) vf-graphql-sqlite-backend;
+        };
+        defaultPackage = pkgs.vf-graphql-sqlite-backend;
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             exa
