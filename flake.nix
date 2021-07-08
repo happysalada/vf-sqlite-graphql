@@ -23,6 +23,7 @@
           inherit (pkgs) vf-graphql-sqlite-backend;
         };
         defaultPackage = pkgs.vf-graphql-sqlite-backend;
+        nixosModule.vf-graphql-sqlite-backend = import ./module.nix;
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             exa
