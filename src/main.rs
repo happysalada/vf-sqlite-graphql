@@ -40,6 +40,7 @@ async fn handle_graphql(mut conn: Conn) -> Conn {
 async fn handle_graphql_options(conn: Conn) -> Conn {
     conn.ok("All good")
         .with_header(("Access-Control-Allow-Origin", "*"))
+        .with_header(("Access-Control-Allow-Headers", "content-type"))
 }
 
 async fn not_found(conn: Conn) -> Conn {
@@ -61,7 +62,7 @@ pub fn application() -> impl Handler {
         Router::new()
             .get("/graphiql", handle_graphiql)
             .post("/graphql", handle_graphql)
-            .any("/graphql", handle_graphql_options),
+            .with_route("OPTIONS", "/graphql", handle_graphql_options),
         not_found,
     )
 }
@@ -82,9 +83,9 @@ mod tests {
     use trillium_testing::prelude::*;
 
     #[test]
-
     fn graphql_plans() {
-        let application = application();
+        let mut application = application();
+        init(&mut application);
         assert_response!(
             post("/graphql")
                 .with_request_body("query { plans { id } }")
@@ -96,8 +97,9 @@ mod tests {
 
     #[test]
     fn graphql_create_plan() {
-        let application = application();
-        let db_url = std::env::var("DATABASE_URL").expect("missing database url");
+        let mut application = application();
+        // let db_url = std::env::var("DATABASE_URL").expect("missing database url");
+        init(&mut application);
         error!("DATABASE_URL {}", db_url);
         assert_response!(
             post("/graphql")
