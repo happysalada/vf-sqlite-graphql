@@ -1922,9 +1922,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-http"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bc8ec7c20fa831d59d029ab8f066bf2186b996943437b12be0d79f086b28e53"
+checksum = "70ea2c12215fb71092a7c31ff9411e7459dc3398df2017d18d005c8489acb025"
 dependencies = [
  "encoding_rs",
  "futures-lite",
@@ -2014,9 +2014,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-testing"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b77cb61e26595426ccc21ed31c9f7abc08ae6f14b4c79f85a5ced334344e8719"
+checksum = "38afa8a465b290fef358fdc3b67bf4b84ccc46faaffc6b8a6ab4c57bf157d2dc"
 dependencies = [
  "async-dup",
  "async-global-executor",
