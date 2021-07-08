@@ -9,6 +9,10 @@ fn timestamp_to_datetime(timestamp: i64) -> DateTime<Utc> {
     DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(seconds, nanos), Utc)
 }
 
+fn unique_name(name: String) -> String {
+    name.to_lowercase().replace(" ", "_")
+}
+
 #[derive(Clone, juniper::GraphQLObject)]
 #[graphql(description = "A plan")]
 struct Plan {
@@ -50,7 +54,7 @@ impl RawPlan {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct RawAgent {
     id: String,
     name: String,
@@ -140,11 +144,12 @@ impl MutationRoot {
     #[graphql(description = "Add new agent")]
     async fn create_agent(context: &Context, new_agent: NewAgent) -> FieldResult<Agent> {
         let ulid = Ulid::new().to_string();
+        let unique_name: String = unique_name(new_agent.name.clone());
         sqlx::query!(
             "INSERT INTO agents (id, name, unique_name, email) VALUES (?, ?, ?, ?)",
             ulid,
             new_agent.name,
-            new_agent.name,
+            unique_name,
             new_agent.email
         )
         .execute(&context.pool)
