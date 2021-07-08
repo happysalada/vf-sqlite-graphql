@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS plans
     id          VARCHAR(26) PRIMARY KEY NOT NULL,
     title       TEXT NOT NULL, 
     description TEXT,
-    agent_id    VARCHAR(26) NOT NULL REFERENCES agents(id),
+    agent_id    VARCHAR(100) NOT NULL REFERENCES agents(unique_name),
     inserted_at INT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
