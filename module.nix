@@ -52,9 +52,12 @@ in
         Restart = "on-failure";
         RestartSec = 5;
 
-        ExecStartPre = "${package}/bin/backend eval \"Union.Release.migrate\"";
-        ExecStart = "${package}/bin/backend start";
-        ExecStop = "${package}/bin/backend stop";
+        ExecStartPre = pkgs.writeShellScript "db_create_and_migrade" ''
+          ${pkgs.sqlx-cli}/bin/sqlx db create
+          ${pkgs.sqlx-cli}/bin/sqlx migrate run
+        '';
+        ExecStart = "${package}/bin/backend";
+        ExecStop = "${package}/bin/backend";
 
         User = "vf";
         Group = "vf";

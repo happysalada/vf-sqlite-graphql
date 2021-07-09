@@ -69,7 +69,7 @@ pub fn application() -> impl Handler {
 fn main() {
     env_logger::init();
     trillium_tokio::config()
-        .with_port(8080)
+        .with_port(std::env::var("HTTP_PORT").expect("missing http port").parse::<u16>().expect("http port should be a number") )
         .with_host("127.0.0.1")
         .with_nodelay()
         .run(application());

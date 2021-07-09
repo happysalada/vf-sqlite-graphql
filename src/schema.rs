@@ -1,13 +1,6 @@
 use crate::Context;
-use chrono::{DateTime, NaiveDateTime, Utc};
 use juniper::{graphql_object, FieldResult};
 use ulid::Ulid;
-
-fn timestamp_to_datetime(timestamp: i64) -> DateTime<Utc> {
-    let seconds = (timestamp / 1000) as i64;
-    let nanos = ((timestamp % 1000) * 1_000_000) as u32;
-    DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(seconds, nanos), Utc)
-}
 
 fn unique_name(name: String) -> String {
     name.to_lowercase().replace(" ", "_")
