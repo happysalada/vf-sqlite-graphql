@@ -23,7 +23,7 @@ in
       '';
     };
     port = mkOption {
-      type = type.port;
+      type = types.port;
       default = 8080;
       example = 8080;
       description = ''
