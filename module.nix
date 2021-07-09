@@ -67,10 +67,10 @@ in
         PrivateTmp = true;
         ProtectSystem = "full";
         NoNewPrivileges = true;
-        ReadWritePaths = "${serviceConfig.StateDir}";
+        ReadWritePaths = "${serviceConfig.stateDir}";
       };
       environment = {
-        DATABASE_URL = "sqlite:${serviceConfig.StateDir}/${serviceConfig.dbName}.db";
+        DATABASE_URL = "sqlite:${serviceConfig.stateDir}/${serviceConfig.dbName}.db";
         HTTP_PORT = toString serviceConfig.port;
       };
     };
