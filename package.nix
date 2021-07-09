@@ -15,4 +15,8 @@ rustPlatform.buildRustPackage rec {
     darwin.apple_sdk.frameworks.CoreFoundation
     libiconv
   ];
+
+  postFixup = ''
+    cp -r ./migrations $out
+  '';
 }
