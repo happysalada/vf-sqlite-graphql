@@ -1,10 +1,10 @@
 { pkgs, config, lib, ... }:
 with lib;
 let
-  serviceConfig = config.services.vf-graphql-sqlite-backend;
+  serviceConfig = config.services.vf-backend;
 in
 {
-  options.services.vf-graphql-sqlite-backend = {
+  options.services.vf-backend = {
     enable = mkEnableOption "Valueflows graphql sqlite backend";
     stateDir = mkOption {
       type = types.str;
@@ -36,7 +36,7 @@ in
     };
   };
 
-  config = with serviceConfig; mkIf enable {
+  config = mkIf serviceConfig.enable {
     users.groups.vf = { };
     users.users.vf = {
       description = "vf user";
@@ -44,7 +44,7 @@ in
       isSystemUser = true;
     };
 
-    systemd.services.vf-graphql-sqlite-backend = {
+    systemd.services.vf-backend = {
       wantedBy = [ "multi-user.target" ];
       description = "A backend with graphql and sqlite for valueflows";
       serviceConfig = {
@@ -56,8 +56,8 @@ in
           ${pkgs.sqlx-cli}/bin/sqlx db create
           ${pkgs.sqlx-cli}/bin/sqlx migrate run
         '';
-        ExecStart = "${package}/bin/backend";
-        ExecStop = "${package}/bin/backend";
+        ExecStart = "${serviceConfig.package}/bin/backend";
+        ExecStop = "${serviceConfig.package}/bin/backend";
 
         User = "vf";
         Group = "vf";
@@ -67,11 +67,11 @@ in
         PrivateTmp = true;
         ProtectSystem = "full";
         NoNewPrivileges = true;
-        ReadWritePaths = "${StateDir}";
+        ReadWritePaths = "${serviceConfig.StateDir}";
       };
       environment = {
-        DATABASE_URL = "sqlite:${StateDir}/${dbName}.db";
-        HTTP_PORT = toString port;
+        DATABASE_URL = "sqlite:${serviceConfig.StateDir}/${serviceConfig.dbName}.db";
+        HTTP_PORT = toString serviceConfig.port;
       };
     };
   };
