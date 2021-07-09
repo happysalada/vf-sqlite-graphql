@@ -53,6 +53,8 @@ in
         RestartSec = 5;
 
         ExecStartPre = pkgs.writeShellScript "db_create_and_migrade" ''
+          # go into the directory where the migrations are
+          cd ${serviceConfig.package}
           ${pkgs.sqlx-cli}/bin/sqlx db create
           ${pkgs.sqlx-cli}/bin/sqlx migrate run
         '';
