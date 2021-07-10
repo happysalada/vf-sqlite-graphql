@@ -100,4 +100,12 @@ impl MutationRoot {
             .await?;
         Ok(inserted_agent)
     }
+
+    async fn delete_agent(context: &Context, unique_name: String) -> FieldResult<i32> {
+        let result = sqlx::query("DELETE FROM agents WHERE unique_name = ?")
+            .bind(unique_name)
+            .execute(&context.pool)
+            .await?;
+        Ok(result.rows_affected() as i32)
+    }
 }
