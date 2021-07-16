@@ -34,6 +34,14 @@ in
       type = types.package;
       description = "package to run the instance with";
     };
+    logLevel = mkOption {
+      type = types.str;
+      default = "info";
+      example = "info";
+      description = ''
+        log level you want for the web server
+      '';
+    };
   };
 
   config = mkIf serviceConfig.enable {
@@ -74,6 +82,7 @@ in
       environment = {
         DATABASE_URL = "sqlite:${serviceConfig.stateDir}/${serviceConfig.dbName}.db";
         HTTP_PORT = toString serviceConfig.port;
+        RUST_LOG = "${serviceConfig.logLevel}";
       };
     };
   };
