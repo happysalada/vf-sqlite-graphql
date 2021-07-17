@@ -48,6 +48,7 @@ async fn not_found(conn: Conn) -> Conn {
 }
 
 pub fn application() -> impl Handler {
+    env_logger::init();
     (
         Logger::new(),
         Init::new(|_| async move {
@@ -67,58 +68,33 @@ pub fn application() -> impl Handler {
 }
 
 fn main() {
-    env_logger::init();
     trillium_tokio::config()
-        .with_port(std::env::var("HTTP_PORT").expect("missing http port").parse::<u16>().expect("http port should be a number") )
+        .with_port(
+            std::env::var("HTTP_PORT")
+                .expect("missing http port")
+                .parse::<u16>()
+                .expect("http port should be a number"),
+        )
         .with_host("127.0.0.1")
         .with_nodelay()
         .run(application());
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::application;
-//     use log::info;
-//     use trillium_testing::prelude::*;
+#[cfg(test)]
+mod tests {
+    use super::application;
+    use trillium_testing::prelude::*;
 
-//     #[test]
-//     fn graphql_plans() {
-//         let mut application = application();
-//         init(&mut application);
-//         assert_response!(
-//             post("/graphql")
-//                 .with_request_body("query { plans { id } }")
-//                 .on(&application),
-//             StatusCode::Ok,
-//             "data: []",
-//         );
-//     }
-
-//     #[test]
-//     fn graphql_create_plan() {
-//         let mut application = application();
-//         init(&mut application);
-//         assert_response!(
-//             post("/graphql")
-//                 .with_request_body("query { plans { id } }")
-//                 .on(&application),
-//             StatusCode::Ok,
-//             "data: []",
-//         );
-//     }
-
-//     #[test]
-//     fn graphql_delete_plan() {
-//         let mut application = application();
-//         init(&mut application);
-//         let db_url = std::env::var("DATABASE_URL").expect("missing database url");
-//         info!("DATABASE_URL {}", db_url);
-//         assert_response!(
-//             post("/graphql")
-//                 .with_request_body("query { plans { id } }")
-//                 .on(&application),
-//             StatusCode::Ok,
-//             "data: []",
-//         );
-//     }
-// }
+    #[test]
+    fn graphql_agents() {
+        let mut application = application();
+        init(&mut application);
+        assert_response!(
+            post("/graphql")
+                .with_request_body(r#"{"query": "{ agents {id, name, email}}"}"#)
+                .on(&application),
+            StatusCode::Ok,
+            r#"{"data":{"agents":[]}}"#,
+        );
+    }
+}
