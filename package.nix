@@ -16,6 +16,9 @@ rustPlatform.buildRustPackage rec {
     libiconv
   ];
 
+  # cargo tests require DATABASE_URL to be set
+  dontCheck = true;
+
   postFixup = ''
     cp -r ./migrations $out
   '';
