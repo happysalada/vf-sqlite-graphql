@@ -17,7 +17,7 @@ rustPlatform.buildRustPackage rec {
   ];
 
   # cargo tests require DATABASE_URL to be set
-  dontCheck = true;
+  doCheck = false;
 
   postFixup = ''
     cp -r ./migrations $out
