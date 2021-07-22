@@ -73,6 +73,15 @@ impl QueryRoot {
         Ok(plans.to_vec())
     }
 
+    #[graphql(description = "Get a Plan")]
+    async fn plan(context: &Context, plan_id: String) -> FieldResult<Plan> {
+        let plan = sqlx::query_as::<_, Plan>("SELECT * FROM plans WHERE plans.id = ?")
+            .bind(plan_id)
+            .fetch_one(&context.pool)
+            .await?;
+        Ok(plan)
+    }
+
     #[graphql(description = "Get all labels for an agent")]
     async fn labels(context: &Context, agent_id: String) -> FieldResult<Vec<Label>> {
         let labels = sqlx::query_as::<_, Label>(
