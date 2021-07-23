@@ -102,6 +102,13 @@ struct NewPlan {
 }
 
 #[derive(juniper::GraphQLInputObject, Debug)]
+struct UpdatePlan {
+    id: String,
+    title: String,
+    description: Option<String>,
+}
+
+#[derive(juniper::GraphQLInputObject, Debug)]
 struct NewAgent {
     name: String,
     email: Option<String>,
@@ -197,6 +204,17 @@ impl MutationRoot {
             .fetch_one(&context.pool)
             .await?;
         Ok(inserted_plan)
+    }
+
+    #[graphql(description = "Update a plan")]
+    async fn update_plan(context: &Context, update_plan: UpdatePlan) -> FieldResult<i32> {
+        let result = sqlx::query("UPDATE plans SET title = ?, description = ? WHERE id = ?")
+            .bind(update_plan.title)
+            .bind(update_plan.description)
+            .bind(update_plan.id)
+            .execute(&context.pool)
+            .await?;
+        Ok(result.rows_affected() as i32)
     }
 
     #[graphql(description = "Add new process")]
