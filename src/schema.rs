@@ -1,4 +1,5 @@
 use crate::Context;
+use futures::future::join_all;
 use juniper::{graphql_object, FieldResult};
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use std::collections::HashMap;
@@ -43,7 +44,7 @@ struct Agent {
     inserted_at: String,
 }
 
-#[derive(Clone, juniper::GraphQLObject, FromRow, Debug, Default)]
+#[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
 #[graphql(description = "A label")]
 struct Label {
     id: String,
@@ -52,6 +53,17 @@ struct Label {
     color: String,
     inserted_at: String,
     agent_id: String,
+}
+
+impl Label {
+    fn from_join_row(row: SqliteRow) -> Self {
+        Label {
+            id: row.get("id"),
+            name: row.get("name"),
+            color: row.get("color"),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Clone, juniper::GraphQLObject, Default, Debug)]
@@ -117,9 +129,9 @@ impl QueryRoot {
             .map(Process::from_row)
             .fetch_all(&context.pool)
             .await?;
-        let labels_process_id = sqlx::query("SELECT * FROM labels JOIN process_labels ON process_labels.label_id = labels.id WHERE process_labels.process_id IN (SELECT id FROM processes WHERE processes.plan_id = ?)")
+        let labels_process_id = sqlx::query("SELECT labels.id, name, color, process_id FROM labels INNER JOIN process_labels ON process_labels.label_id = labels.id WHERE process_labels.process_id IN (SELECT id FROM processes WHERE processes.plan_id = ?)")
             .bind(&plan.id)
-            .map(|row| (row.get("process_id"), Label::from_row(&row).unwrap_or_default()))
+            .map(|row| (row.get("process_id"), Label::from_join_row(row)))
             .fetch_all(&context.pool)
             .await?;
         let plan_id_map: HashMap<String, Vec<Label>> = labels_process_id.iter().fold(
@@ -278,6 +290,7 @@ impl MutationRoot {
     #[graphql(description = "Add new process")]
     async fn create_process(context: &Context, new_process: NewProcess) -> FieldResult<Process> {
         let ulid = Ulid::new().to_string();
+        // TODO put those in a transaction
         sqlx::query("INSERT INTO processes (id, title, description, agent_id, plan_id) VALUES (?, ?, ?, ?, ?)")
             .bind(&ulid)
             .bind(new_process.title)
@@ -286,11 +299,31 @@ impl MutationRoot {
             .bind(new_process.plan_id)
             .execute(&context.pool)
             .await?;
-        let inserted_process = sqlx::query("SELECT * FROM processes WHERE id = ?")
-            .bind(ulid)
+        // TODO paralelize queries
+        let new_labels = new_process
+            .labels
+            .unwrap_or_else(Vec::new)
+            .iter()
+            .map(|label_id| {
+                sqlx::query("INSERT INTO process_labels (process_id, label_id) VALUES (?, ?)")
+                    .bind(&ulid)
+                    .bind(label_id.clone())
+                    .execute(&context.pool)
+            })
+            .collect::<Vec<_>>();
+        join_all(new_labels).await;
+
+        let mut inserted_process = sqlx::query("SELECT * FROM processes WHERE id = ?")
+            .bind(&ulid)
             .map(Process::from_row)
             .fetch_one(&context.pool)
             .await?;
+        let labels = sqlx::query("SELECT labels.id, name, color FROM labels INNER JOIN process_labels ON process_labels.label_id = labels.id WHERE process_labels.process_id = ?")
+            .bind(ulid)
+            .map(|row| Label{ id: row.get("id"), name: row.get("name"), color: row.get("color"), ..Default::default()})
+            .fetch_all(&context.pool)
+            .await?;
+        inserted_process.labels = labels;
         Ok(inserted_process)
     }
 }

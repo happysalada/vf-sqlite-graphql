@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS processes
 CREATE TABLE IF NOT EXISTS process_labels
 (
     id          INTEGER PRIMARY KEY NOT NULL,
-    process_id  VARCHAR(26) REFERENCES process(id) NOT NULL,
+    process_id  VARCHAR(26) REFERENCES processes(id) NOT NULL,
     label_id    VARCHAR(26) REFERENCES labels(id) NOT NULL,
     inserted_at INT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
