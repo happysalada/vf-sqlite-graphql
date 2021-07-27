@@ -326,4 +326,12 @@ impl MutationRoot {
         inserted_process.labels = labels;
         Ok(inserted_process)
     }
+
+    async fn delete_process(context: &Context, process_id: String) -> FieldResult<i32> {
+        let result = sqlx::query("DELETE FROM processes WHERE id = ?")
+            .bind(process_id)
+            .execute(&context.pool)
+            .await?;
+        Ok(result.rows_affected() as i32)
+    }
 }
