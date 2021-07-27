@@ -200,6 +200,14 @@ struct NewProcess {
     labels: Option<Vec<String>>,
 }
 
+#[derive(juniper::GraphQLInputObject, Debug)]
+struct UpdateProcess {
+    id: String,
+    title: String,
+    description: Option<String>,
+    labels: Option<Vec<String>>,
+}
+
 pub struct MutationRoot;
 
 #[graphql_object(Context=Context)]
@@ -327,6 +335,37 @@ impl MutationRoot {
         Ok(inserted_process)
     }
 
+    #[graphql(description = "Update a process")]
+    async fn update_process(context: &Context, update_process: UpdateProcess) -> FieldResult<i32> {
+        // TODO paralelize queries
+        let id: String = update_process.id;
+        sqlx::query("DELETE FROM process_labels WHERE process_id = ?")
+            .bind(&id)
+            .execute(&context.pool)
+            .await?;
+        let new_labels = update_process
+            .labels
+            .unwrap_or_else(Vec::new)
+            .iter()
+            .map(|label_id| {
+                sqlx::query("INSERT INTO process_labels (process_id, label_id) VALUES (?, ?)")
+                    .bind(&id)
+                    .bind(label_id.clone())
+                    .execute(&context.pool)
+            })
+            .collect::<Vec<_>>();
+        join_all(new_labels).await;
+
+        let result = sqlx::query("UPDATE processes SET title = ?, description = ? WHERE id = ?")
+            .bind(update_process.title)
+            .bind(update_process.description)
+            .bind(&id)
+            .execute(&context.pool)
+            .await?;
+        Ok(result.rows_affected() as i32)
+    }
+
+    #[graphql(description = "Delete a process")]
     async fn delete_process(context: &Context, process_id: String) -> FieldResult<i32> {
         let mut transaction = context.pool.begin().await?;
         sqlx::query("DELETE FROM process_labels WHERE process_id = ?")
