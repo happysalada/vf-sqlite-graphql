@@ -1,165 +1,11 @@
+use super::{Agent, Label, Plan, Process};
 use crate::Context;
 use futures::future::join_all;
 use juniper::{graphql_object, FieldResult};
-use sqlx::{sqlite::SqliteRow, FromRow, Row};
-use std::collections::HashMap;
-use std::default::Default;
 use ulid::Ulid;
 
 fn unique_name(name: String) -> String {
     name.to_lowercase().replace(" ", "_")
-}
-
-#[derive(Clone, juniper::GraphQLObject, Default)]
-#[graphql(description = "A plan")]
-struct Plan {
-    id: String,
-    title: String,
-    description: Option<String>,
-    agent_id: String,
-    processes: Vec<Process>,
-    inserted_at: String,
-}
-
-impl Plan {
-    fn from_row(row: SqliteRow) -> Self {
-        Plan {
-            id: row.get("id"),
-            title: row.get("title"),
-            description: row.get("description"),
-            agent_id: row.get("agent_id"),
-            inserted_at: row.get("inserted_at"),
-            ..Default::default()
-        }
-    }
-}
-
-#[derive(Clone, juniper::GraphQLObject, FromRow)]
-#[graphql(description = "An agent")]
-struct Agent {
-    id: String,
-    name: String,
-    unique_name: String,
-    email: Option<String>,
-    inserted_at: String,
-}
-
-#[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
-#[graphql(description = "A label")]
-struct Label {
-    id: String,
-    name: String,
-    unique_name: String,
-    color: String,
-    inserted_at: String,
-    agent_id: String,
-}
-
-impl Label {
-    fn from_join_row(row: SqliteRow) -> Self {
-        Label {
-            id: row.get("id"),
-            name: row.get("name"),
-            color: row.get("color"),
-            ..Default::default()
-        }
-    }
-}
-
-#[derive(Clone, juniper::GraphQLObject, Default, Debug)]
-#[graphql(description = "A process")]
-struct Process {
-    id: String,
-    title: String,
-    description: Option<String>,
-    labels: Vec<Label>,
-    inserted_at: String,
-    start_at: String,
-    due_at: String,
-    plan_id: String,
-    agent_id: String,
-}
-
-impl Process {
-    fn from_row(row: SqliteRow) -> Self {
-        Process {
-            id: row.get("id"),
-            title: row.get("title"),
-            description: row.get("description"),
-            inserted_at: row.get("inserted_at"),
-            start_at: row.get("start_at"),
-            plan_id: row.get("plan_id"),
-            ..Default::default()
-        }
-    }
-}
-
-pub struct QueryRoot;
-
-#[graphql_object(Context=Context)]
-impl QueryRoot {
-    #[graphql(description = "Get all Agents")]
-    async fn agents(context: &Context) -> FieldResult<Vec<Agent>> {
-        let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents ORDER BY inserted_at DESC")
-            .fetch_all(&context.pool)
-            .await?;
-        Ok(agents.to_vec())
-    }
-
-    #[graphql(description = "Get all Plans for an agent")]
-    async fn plans(context: &Context, agent_id: String) -> FieldResult<Vec<Plan>> {
-        let plans =
-            sqlx::query("SELECT * FROM plans WHERE plans.agent_id = ? ORDER BY inserted_at DESC")
-                .bind(agent_id)
-                .map(Plan::from_row)
-                .fetch_all(&context.pool)
-                .await?;
-        Ok(plans.to_vec())
-    }
-
-    #[graphql(description = "Get a Plan")]
-    async fn plan(context: &Context, plan_id: String) -> FieldResult<Plan> {
-        let mut plan = sqlx::query("SELECT * FROM plans WHERE plans.id = ?")
-            .bind(plan_id)
-            .map(Plan::from_row)
-            .fetch_one(&context.pool)
-            .await?;
-        let mut processes = sqlx::query("SELECT * FROM processes WHERE processes.plan_id = ? ")
-            .bind(&plan.id)
-            .map(Process::from_row)
-            .fetch_all(&context.pool)
-            .await?;
-        let labels_process_id = sqlx::query("SELECT labels.id, name, color, process_id FROM labels INNER JOIN process_labels ON process_labels.label_id = labels.id WHERE process_labels.process_id IN (SELECT id FROM processes WHERE processes.plan_id = ?)")
-            .bind(&plan.id)
-            .map(|row| (row.get("process_id"), Label::from_join_row(row)))
-            .fetch_all(&context.pool)
-            .await?;
-        let plan_id_map: HashMap<String, Vec<Label>> = labels_process_id.iter().fold(
-            HashMap::<String, Vec<Label>>::new(),
-            |mut acc: HashMap<String, Vec<Label>>, (process_id, label): &(String, Label)| {
-                let labels = acc.entry(process_id.to_owned()).or_insert_with(Vec::new);
-                labels.push(label.clone());
-                acc
-            },
-        );
-
-        processes.iter_mut().for_each(|p| {
-            p.labels = plan_id_map.get(&p.id).unwrap_or(&vec![]).clone();
-        });
-        plan.processes = processes;
-        Ok(plan)
-    }
-
-    #[graphql(description = "Get all labels for an agent")]
-    async fn labels(context: &Context, agent_id: String) -> FieldResult<Vec<Label>> {
-        let labels = sqlx::query_as::<_, Label>(
-            "SELECT * FROM labels WHERE labels.agent_id = ? ORDER BY inserted_at DESC",
-        )
-        .bind(agent_id)
-        .fetch_all(&context.pool)
-        .await?;
-        Ok(labels.to_vec())
-    }
 }
 
 #[derive(juniper::GraphQLInputObject, Debug)]
@@ -328,7 +174,7 @@ impl MutationRoot {
             .await?;
         let labels = sqlx::query("SELECT labels.id, name, color FROM labels INNER JOIN process_labels ON process_labels.label_id = labels.id WHERE process_labels.process_id = ?")
             .bind(ulid)
-            .map(|row| Label{ id: row.get("id"), name: row.get("name"), color: row.get("color"), ..Default::default()})
+            .map(Label::from_row)
             .fetch_all(&context.pool)
             .await?;
         inserted_process.labels = labels;
