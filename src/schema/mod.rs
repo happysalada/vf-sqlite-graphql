@@ -88,3 +88,31 @@ impl Process {
         }
     }
 }
+
+#[derive(sqlx::Type, Clone, Debug, juniper::GraphQLEnum)]
+enum InputOutput {
+    Input,
+    Output,
+}
+impl Default for InputOutput {
+    fn default() -> Self {
+        InputOutput::Input
+    }
+}
+
+#[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
+#[graphql(description = "An action")]
+struct Action {
+    id: String,
+    name: String,
+    input_output: InputOutput,
+    inserted_at: String,
+}
+
+#[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
+#[graphql(description = "A unit of measure")]
+struct Unit {
+    id: String,
+    label: String,
+    inserted_at: String,
+}

@@ -1,4 +1,4 @@
-use super::{Agent, Label, Plan, Process};
+use super::{Action, Agent, Label, Plan, Process, Unit};
 use crate::Context;
 use juniper::{graphql_object, FieldResult};
 use sqlx::Row;
@@ -69,5 +69,24 @@ impl QueryRoot {
         .fetch_all(&context.pool)
         .await?;
         Ok(labels.to_vec())
+    }
+
+    #[graphql(description = "Get all actions")]
+    async fn actions(context: &Context) -> FieldResult<Vec<Action>> {
+        let actions =
+            sqlx::query_as::<_, Action>("SELECT * FROM actions ORDER BY inserted_at DESC")
+                .fetch_all(&context.pool)
+                .await?;
+        dbg!(&actions);
+        Ok(actions.to_vec())
+    }
+
+    #[graphql(description = "Get all units")]
+    async fn units(context: &Context) -> FieldResult<Vec<Unit>> {
+        let units = sqlx::query_as::<_, Unit>("SELECT * FROM units ORDER BY inserted_at DESC")
+            .fetch_all(&context.pool)
+            .await?;
+        dbg!(&units);
+        Ok(units.to_vec())
     }
 }

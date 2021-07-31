@@ -19,3 +19,5 @@ CREATE TABLE IF NOT EXISTS process_labels
     label_id    VARCHAR(26) REFERENCES labels(id) NOT NULL,
     inserted_at INT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS unique_process_labels_process_id_label_id ON process_labels (process_id, label_id)
