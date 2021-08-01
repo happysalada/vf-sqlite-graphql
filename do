@@ -8,5 +8,9 @@ proc update_deps() {
   cargo update
   cargo upgrade
 }
+proc reset_db {
+  sqlx database reset -y
+}
+
 
 @ARGV

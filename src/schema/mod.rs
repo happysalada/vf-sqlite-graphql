@@ -11,7 +11,6 @@ struct Plan {
     id: String,
     title: String,
     description: Option<String>,
-    agent_id: String,
     processes: Vec<Process>,
     inserted_at: String,
 }
@@ -22,14 +21,13 @@ impl Plan {
             id: row.get("id"),
             title: row.get("title"),
             description: row.get("description"),
-            agent_id: row.get("agent_id"),
             inserted_at: row.get("inserted_at"),
             ..Default::default()
         }
     }
 }
 
-#[derive(Clone, juniper::GraphQLObject, FromRow)]
+#[derive(Clone, juniper::GraphQLObject, FromRow, Debug, Default)]
 #[graphql(description = "An agent")]
 struct Agent {
     id: String,
@@ -37,6 +35,17 @@ struct Agent {
     unique_name: String,
     email: Option<String>,
     inserted_at: String,
+}
+
+impl Agent {
+    fn from_row(row: SqliteRow) -> Self {
+        Agent {
+            id: row.get("id"),
+            name: row.get("name"),
+            unique_name: row.get("unique_name"),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
@@ -68,6 +77,7 @@ struct Process {
     title: String,
     description: Option<String>,
     labels: Vec<Label>,
+    agents: Vec<Agent>,
     inserted_at: String,
     start_at: String,
     due_at: String,
