@@ -56,7 +56,7 @@ struct Label {
     unique_name: String,
     color: String,
     inserted_at: String,
-    agent_id: String,
+    agent_unique_name: String,
 }
 
 impl Label {
@@ -125,4 +125,14 @@ struct Unit {
     id: String,
     label: String,
     inserted_at: String,
+}
+
+#[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
+#[graphql(description = "A resource specification")]
+struct ResourceSpecification {
+    id: String,
+    name: String,
+    unique_name: String,
+    inserted_at: String,
+    agent_unique_name: String,
 }

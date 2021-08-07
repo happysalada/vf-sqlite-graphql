@@ -1,17 +1,17 @@
-use super::{Agent, Label, Plan, Process};
+use super::{Agent, Label, Plan, Process, ResourceSpecification};
 use crate::Context;
 use futures::future::join_all;
 use juniper::{graphql_object, FieldResult};
 use ulid::Ulid;
 
-fn unique_name(name: String) -> String {
-    name.to_lowercase().replace(" ", "_")
+fn unique_name(name: &str) -> String {
+    name.clone().to_lowercase().replace(" ", "_")
 }
 
 #[derive(juniper::GraphQLInputObject, Debug)]
 struct NewPlan {
     title: String,
-    agent_id: String,
+    agent_unique_name: String,
     description: Option<String>,
 }
 
@@ -32,7 +32,7 @@ struct NewAgent {
 struct NewLabel {
     name: String,
     color: String,
-    agent_id: String,
+    agent_unique_name: String,
 }
 
 #[derive(juniper::GraphQLInputObject, Debug)]
@@ -55,6 +55,12 @@ struct UpdateProcess {
     agents: Option<Vec<String>>,
 }
 
+#[derive(juniper::GraphQLInputObject, Debug)]
+struct NewResourceSpecification {
+    name: String,
+    agent_unique_name: String,
+}
+
 pub struct MutationRoot;
 
 #[graphql_object(Context=Context)]
@@ -62,7 +68,7 @@ impl MutationRoot {
     #[graphql(description = "Add new agent")]
     async fn create_agent(context: &Context, new_agent: NewAgent) -> FieldResult<Agent> {
         let ulid = Ulid::new().to_string();
-        let unique_name: String = unique_name(new_agent.name.clone());
+        let unique_name: String = unique_name(&new_agent.name);
         sqlx::query("INSERT INTO agents (id, name, unique_name, email) VALUES (?, ?, ?, ?)")
             .bind(&ulid)
             .bind(new_agent.name)
@@ -88,15 +94,15 @@ impl MutationRoot {
     #[graphql(description = "Add a new label")]
     async fn create_label(context: &Context, new_label: NewLabel) -> FieldResult<Label> {
         let ulid = Ulid::new().to_string();
-        let unique_name: String = unique_name(new_label.name.clone());
+        let unique_name: String = unique_name(&new_label.name);
         sqlx::query(
-            "INSERT INTO labels (id, name, unique_name, color, agent_id) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO labels (id, name, unique_name, color, agent_unique_name) VALUES (?, ?, ?, ?, ?)",
         )
         .bind(&ulid)
         .bind(new_label.name)
         .bind(unique_name)
         .bind(new_label.color)
-        .bind(new_label.agent_id)
+        .bind(new_label.agent_unique_name)
         .execute(&context.pool)
         .await?;
         let inserted_label = sqlx::query_as::<_, Label>("SELECT * FROM labels WHERE id = ?")
@@ -106,6 +112,7 @@ impl MutationRoot {
         Ok(inserted_label)
     }
 
+    #[graphql(description = "Delete a label")]
     async fn delete_label(context: &Context, unique_name: String) -> FieldResult<i32> {
         let result = sqlx::query("DELETE FROM labels WHERE unique_name = ?")
             .bind(unique_name)
@@ -122,9 +129,9 @@ impl MutationRoot {
             .bind(new_plan.title)
             .execute(&context.pool)
             .await?;
-        sqlx::query("INSERT INTO plan_agents (plan_id, agent_id) VALUES (?, ?)")
+        sqlx::query("INSERT INTO plan_agents (plan_id, agent_unique_name) VALUES (?, ?)")
             .bind(&ulid)
-            .bind(new_plan.agent_id)
+            .bind(new_plan.agent_unique_name)
             .execute(&context.pool)
             .await?;
         let inserted_plan = sqlx::query("SELECT * FROM plans WHERE id = ?")
@@ -280,11 +287,44 @@ impl MutationRoot {
             .bind(&process_id)
             .execute(&mut transaction)
             .await?;
+        sqlx::query("DELETE FROM process_agents WHERE process_id = ?")
+            .bind(&process_id)
+            .execute(&mut transaction)
+            .await?;
         let result = sqlx::query("DELETE FROM processes WHERE id = ?")
             .bind(process_id)
             .execute(&mut transaction)
             .await?;
         transaction.commit().await?;
+        Ok(result.rows_affected() as i32)
+    }
+
+    #[graphql(description = "Add a new resource specification")]
+    async fn create_resource_specification(context: &Context, new_resource_specification: NewResourceSpecification) -> FieldResult<ResourceSpecification> {
+        let ulid = Ulid::new().to_string();
+        let unique_name: String = unique_name(&new_resource_specification.name);
+        sqlx::query(
+            "INSERT INTO resource_specifications (id, name, unique_name, agent_unique_name) VALUES (?, ?, ?, ?)",
+        )
+        .bind(&ulid)
+        .bind(new_resource_specification.name)
+        .bind(unique_name)
+        .bind(new_resource_specification.agent_unique_name)
+        .execute(&context.pool)
+        .await?;
+        let inserted_resource_specification = sqlx::query_as::<_, ResourceSpecification>("SELECT * FROM resource_specifications WHERE id = ?")
+            .bind(ulid)
+            .fetch_one(&context.pool)
+            .await?;
+        Ok(inserted_resource_specification)
+    }
+
+    #[graphql(description = "Delete a resource specification")]
+    async fn delete_resource_specification(context: &Context, unique_name: String) -> FieldResult<i32> {
+        let result = sqlx::query("DELETE FROM resource_specifications WHERE unique_name = ?")
+            .bind(unique_name)
+            .execute(&context.pool)
+            .await?;
         Ok(result.rows_affected() as i32)
     }
 }
