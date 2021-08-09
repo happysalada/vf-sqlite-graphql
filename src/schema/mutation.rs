@@ -5,7 +5,7 @@ use juniper::{graphql_object, FieldResult};
 use ulid::Ulid;
 
 fn unique_name(name: &str) -> String {
-    name.clone().to_lowercase().replace(" ", "_")
+    name.to_string().to_lowercase().replace(" ", "_")
 }
 
 #[derive(juniper::GraphQLInputObject, Debug)]
@@ -300,7 +300,10 @@ impl MutationRoot {
     }
 
     #[graphql(description = "Add a new resource specification")]
-    async fn create_resource_specification(context: &Context, new_resource_specification: NewResourceSpecification) -> FieldResult<ResourceSpecification> {
+    async fn create_resource_specification(
+        context: &Context,
+        new_resource_specification: NewResourceSpecification,
+    ) -> FieldResult<ResourceSpecification> {
         let ulid = Ulid::new().to_string();
         let unique_name: String = unique_name(&new_resource_specification.name);
         sqlx::query(
@@ -312,15 +315,20 @@ impl MutationRoot {
         .bind(new_resource_specification.agent_unique_name)
         .execute(&context.pool)
         .await?;
-        let inserted_resource_specification = sqlx::query_as::<_, ResourceSpecification>("SELECT * FROM resource_specifications WHERE id = ?")
-            .bind(ulid)
-            .fetch_one(&context.pool)
-            .await?;
+        let inserted_resource_specification = sqlx::query_as::<_, ResourceSpecification>(
+            "SELECT * FROM resource_specifications WHERE id = ?",
+        )
+        .bind(ulid)
+        .fetch_one(&context.pool)
+        .await?;
         Ok(inserted_resource_specification)
     }
 
     #[graphql(description = "Delete a resource specification")]
-    async fn delete_resource_specification(context: &Context, unique_name: String) -> FieldResult<i32> {
+    async fn delete_resource_specification(
+        context: &Context,
+        unique_name: String,
+    ) -> FieldResult<i32> {
         let result = sqlx::query("DELETE FROM resource_specifications WHERE unique_name = ?")
             .bind(unique_name)
             .execute(&context.pool)
