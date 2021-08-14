@@ -1,41 +1,35 @@
-use super::{Agent, Label, Plan, Process, ResourceSpecification};
+use super::{Action, Agent, Commitment, Label, Plan, Process, ResourceSpecification, Unit};
 use crate::Context;
 use futures::future::join_all;
-use juniper::{graphql_object, FieldResult};
+use juniper::{graphql_object, FieldResult, GraphQLInputObject};
 use ulid::Ulid;
 
 fn unique_name(name: &str) -> String {
     name.to_string().to_lowercase().replace(" ", "_")
 }
 
-#[derive(juniper::GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct NewPlan {
     title: String,
     agent_unique_name: String,
     description: Option<String>,
 }
 
-#[derive(juniper::GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct UpdatePlan {
     id: String,
     title: String,
     description: Option<String>,
 }
 
-#[derive(juniper::GraphQLInputObject, Debug)]
-struct NewAgent {
-    name: String,
-    email: Option<String>,
-}
-
-#[derive(juniper::GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct NewLabel {
     name: String,
     color: String,
     agent_unique_name: String,
 }
 
-#[derive(juniper::GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct NewProcess {
     title: String,
     description: Option<String>,
@@ -46,7 +40,7 @@ struct NewProcess {
     agents: Option<Vec<String>>,
 }
 
-#[derive(juniper::GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct UpdateProcess {
     id: String,
     title: String,
@@ -55,42 +49,40 @@ struct UpdateProcess {
     agents: Option<Vec<String>>,
 }
 
-#[derive(juniper::GraphQLInputObject, Debug)]
+#[derive(GraphQLInputObject, Debug)]
 struct NewResourceSpecification {
     name: String,
     agent_unique_name: String,
+}
+
+#[derive(GraphQLInputObject, Debug)]
+struct NewCommitment {
+    description: String,
+    process_id: String,
+    action_id: String,
+    assigned_agent_id: Option<String>,
+    resource_specification_id: String,
+    quantity: i32,
+    unit_id: String,
+    due_at: Option<String>,
+}
+
+#[derive(GraphQLInputObject, Debug)]
+struct UpdateCommitment {
+    id: String,
+    description: Option<String>,
+    action_id: Option<String>,
+    quantity: Option<i32>,
+    unit_id: Option<String>,
+    resource_specification_id: Option<String>,
+    assigned_agent_id: Option<String>,
+    due_at: Option<String>,
 }
 
 pub struct MutationRoot;
 
 #[graphql_object(Context=Context)]
 impl MutationRoot {
-    #[graphql(description = "Add new agent")]
-    async fn create_agent(context: &Context, new_agent: NewAgent) -> FieldResult<Agent> {
-        let ulid = Ulid::new().to_string();
-        let unique_name: String = unique_name(&new_agent.name);
-        sqlx::query("INSERT INTO agents (id, name, unique_name, email) VALUES (?, ?, ?, ?)")
-            .bind(&ulid)
-            .bind(new_agent.name)
-            .bind(unique_name)
-            .bind(new_agent.email)
-            .execute(&context.pool)
-            .await?;
-        let inserted_agent = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE id = ?")
-            .bind(ulid)
-            .fetch_one(&context.pool)
-            .await?;
-        Ok(inserted_agent)
-    }
-
-    async fn delete_agent(context: &Context, unique_name: String) -> FieldResult<i32> {
-        let result = sqlx::query("DELETE FROM agents WHERE unique_name = ?")
-            .bind(unique_name)
-            .execute(&context.pool)
-            .await?;
-        Ok(result.rows_affected() as i32)
-    }
-
     #[graphql(description = "Add a new label")]
     async fn create_label(context: &Context, new_label: NewLabel) -> FieldResult<Label> {
         let ulid = Ulid::new().to_string();
@@ -195,7 +187,7 @@ impl MutationRoot {
             .collect::<Vec<_>>();
         // TODO parallelize
         join_all(new_process_labels).await;
-        dbg!(join_all(new_process_agents).await);
+        join_all(new_process_agents).await;
 
         let mut inserted_process = sqlx::query("SELECT * FROM processes WHERE id = ?")
             .bind(&ulid)
@@ -256,7 +248,6 @@ impl MutationRoot {
                     .execute(&context.pool)
             })
             .collect::<Vec<_>>();
-        dbg!(&update_process.agents);
         let new_process_agents = update_process
             .agents
             .unwrap_or_else(Vec::new)
@@ -269,7 +260,7 @@ impl MutationRoot {
             })
             .collect::<Vec<_>>();
         join_all(new_process_labels).await;
-        dbg!(join_all(new_process_agents).await);
+        join_all(new_process_agents).await;
 
         let result = sqlx::query("UPDATE processes SET title = ?, description = ? WHERE id = ?")
             .bind(update_process.title)
@@ -331,6 +322,123 @@ impl MutationRoot {
     ) -> FieldResult<i32> {
         let result = sqlx::query("DELETE FROM resource_specifications WHERE unique_name = ?")
             .bind(unique_name)
+            .execute(&context.pool)
+            .await?;
+        Ok(result.rows_affected() as i32)
+    }
+
+    #[graphql(description = "Add new commitment")]
+    async fn create_commitment(
+        context: &Context,
+        new_commitment: NewCommitment,
+    ) -> FieldResult<Commitment> {
+        let ulid = Ulid::new().to_string();
+        // TODO put those in a transaction
+        sqlx::query(
+            "
+            INSERT INTO commitments (id, description, process_id, action_id, assigned_agent_id, quantity, unit_id, resource_specification_id, due_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ",
+        )
+        .bind(&ulid)
+        .bind(new_commitment.description)
+        .bind(new_commitment.process_id)
+        .bind(new_commitment.action_id)
+        .bind(new_commitment.assigned_agent_id)
+        .bind(new_commitment.quantity)
+        .bind(new_commitment.unit_id)
+        .bind(new_commitment.resource_specification_id)
+        .bind(new_commitment.due_at)
+        .execute(&context.pool)
+        .await?;
+        let mut inserted_commitment = sqlx::query("SELECT * FROM commitments WHERE id = ?")
+            .bind(&ulid)
+            .map(Commitment::from_row)
+            .fetch_one(&context.pool)
+            .await?;
+        let action = sqlx::query_as::<_, Action>(
+            "
+           SELECT *
+           FROM actions 
+           WHERE actions.id = ?
+           ",
+        )
+        .bind(&inserted_commitment.action_id)
+        .fetch_one(&context.pool)
+        .await?;
+        inserted_commitment.action = Some(action);
+        let unit = sqlx::query_as::<_, Unit>(
+            "
+            SELECT *
+            FROM units 
+            WHERE units.id = ?
+            ",
+        )
+        .bind(&inserted_commitment.unit_id)
+        .fetch_one(&context.pool)
+        .await?;
+        inserted_commitment.unit = Some(unit);
+        let resource_specification = sqlx::query_as::<_, ResourceSpecification>(
+            "
+           SELECT *
+           FROM resource_specifications
+           WHERE resource_specifications.id = ?
+           ",
+        )
+        .bind(&inserted_commitment.resource_specification_id)
+        .fetch_one(&context.pool)
+        .await?;
+        inserted_commitment.resource_specification = Some(resource_specification);
+        if let Some(assigned_agent_id) = &inserted_commitment.assigned_agent_id {
+            let assigned_agent = sqlx::query_as::<_, Agent>(
+                "
+           SELECT *
+           FROM agents
+           WHERE agents.id = ?
+           ",
+            )
+            .bind(assigned_agent_id)
+            .fetch_one(&context.pool)
+            .await?;
+            inserted_commitment.assigned_agent = Some(assigned_agent);
+        }
+        Ok(inserted_commitment)
+    }
+
+    #[graphql(description = "Update a commitment")]
+    async fn update_commitment(
+        context: &Context,
+        update_commitment: UpdateCommitment,
+    ) -> FieldResult<i32> {
+        let result = sqlx::query(
+            "
+            UPDATE commitments
+            SET description = ?,
+                unit_id = ?,
+                action_id = ?,
+                resource_specification_id = ?,
+                quantity = ?,
+                assigned_agent_id = ?,
+                due_at = ?
+            WHERE id = ?",
+        )
+        .bind(update_commitment.description)
+        .bind(update_commitment.unit_id)
+        .bind(update_commitment.action_id)
+        .bind(update_commitment.resource_specification_id)
+        .bind(update_commitment.quantity)
+        .bind(update_commitment.assigned_agent_id)
+        .bind(update_commitment.due_at)
+        .bind(update_commitment.id)
+        .execute(&context.pool)
+        .await?;
+        Ok(result.rows_affected() as i32)
+    }
+
+    #[graphql(description = "Delete a commitment")]
+    async fn delete_commitment(context: &Context, id: String) -> FieldResult<i32> {
+        let result = sqlx::query("DELETE FROM commitments WHERE id = ?")
+            .bind(id)
             .execute(&context.pool)
             .await?;
         Ok(result.rows_affected() as i32)

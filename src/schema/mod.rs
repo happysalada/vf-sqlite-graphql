@@ -1,3 +1,4 @@
+use juniper::{GraphQLEnum, GraphQLObject};
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use std::default::Default;
 pub mod mutation;
@@ -5,7 +6,7 @@ pub mod query;
 pub use mutation::MutationRoot;
 pub use query::QueryRoot;
 
-#[derive(Clone, juniper::GraphQLObject, Default)]
+#[derive(Clone, GraphQLObject, Default)]
 #[graphql(description = "A plan")]
 struct Plan {
     id: String,
@@ -27,7 +28,7 @@ impl Plan {
     }
 }
 
-#[derive(Clone, juniper::GraphQLObject, FromRow, Debug, Default)]
+#[derive(Clone, GraphQLObject, FromRow, Debug, Default)]
 #[graphql(description = "An agent")]
 struct Agent {
     id: String,
@@ -48,7 +49,7 @@ impl Agent {
     }
 }
 
-#[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
+#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
 #[graphql(description = "A label")]
 struct Label {
     id: String,
@@ -70,7 +71,7 @@ impl Label {
     }
 }
 
-#[derive(Clone, juniper::GraphQLObject, Default, Debug)]
+#[derive(Clone, GraphQLObject, Default, Debug)]
 #[graphql(description = "A process")]
 struct Process {
     id: String,
@@ -83,6 +84,7 @@ struct Process {
     due_at: String,
     plan_id: String,
     agent_id: String,
+    commitments: Vec<Commitment>,
 }
 
 impl Process {
@@ -99,7 +101,7 @@ impl Process {
     }
 }
 
-#[derive(sqlx::Type, Clone, Debug, juniper::GraphQLEnum)]
+#[derive(sqlx::Type, Clone, Debug, GraphQLEnum)]
 enum InputOutput {
     Input,
     Output,
@@ -110,7 +112,7 @@ impl Default for InputOutput {
     }
 }
 
-#[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
+#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
 #[graphql(description = "An action")]
 struct Action {
     id: String,
@@ -119,7 +121,18 @@ struct Action {
     inserted_at: String,
 }
 
-#[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
+impl Action {
+    fn from_row(row: SqliteRow) -> Self {
+        Action {
+            id: row.get("id"),
+            name: row.get("name"),
+            input_output: row.get("input_output"),
+            inserted_at: row.get("inserted_at"),
+        }
+    }
+}
+
+#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
 #[graphql(description = "A unit of measure")]
 struct Unit {
     id: String,
@@ -127,7 +140,17 @@ struct Unit {
     inserted_at: String,
 }
 
-#[derive(Clone, juniper::GraphQLObject, Debug, Default, FromRow)]
+impl Unit {
+    fn from_row(row: SqliteRow) -> Self {
+        Unit {
+            id: row.get("id"),
+            label: row.get("label"),
+            inserted_at: row.get("inserted_at"),
+        }
+    }
+}
+
+#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
 #[graphql(description = "A resource specification")]
 struct ResourceSpecification {
     id: String,
@@ -135,4 +158,50 @@ struct ResourceSpecification {
     unique_name: String,
     inserted_at: String,
     agent_unique_name: String,
+}
+
+impl ResourceSpecification {
+    fn from_row(row: SqliteRow) -> Self {
+        ResourceSpecification {
+            id: row.get("id"),
+            name: row.get("name"),
+            inserted_at: row.get("inserted_at"),
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
+#[graphql(description = "A commitment")]
+struct Commitment {
+    id: String,
+    description: String,
+    process_id: String,
+    action_id: String,
+    action: Option<Action>,
+    assigned_agent_id: Option<String>,
+    assigned_agent: Option<Agent>,
+    quantity: i32,
+    unit_id: String,
+    unit: Option<Unit>,
+    resource_specification_id: String,
+    resource_specification: Option<ResourceSpecification>,
+    inserted_at: String,
+}
+
+impl Commitment {
+    fn from_row(row: SqliteRow) -> Self {
+        Commitment {
+            id: row.get("id"),
+            description: row.get("description"),
+            inserted_at: row.get("inserted_at"),
+            process_id: row.get("process_id"),
+            action_id: row.get("action_id"),
+            assigned_agent_id: row.get("assigned_agent_id"),
+            quantity: row.get("quantity"),
+            unit_id: row.get("unit_id"),
+            resource_specification_id: row.get("resource_specification_id"),
+            ..Default::default()
+        }
+    }
 }

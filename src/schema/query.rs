@@ -1,4 +1,4 @@
-use super::{Action, Agent, Label, Plan, Process, ResourceSpecification, Unit};
+use super::{Action, Agent, Commitment, Label, Plan, Process, ResourceSpecification, Unit};
 use crate::Context;
 use juniper::{graphql_object, FieldResult};
 use sqlx::Row;
@@ -39,7 +39,7 @@ impl QueryRoot {
             .map(Process::from_row)
             .fetch_all(&context.pool)
             .await?;
-        let labels_process_id = sqlx::query(
+        let process_id_labels_tuples = sqlx::query(
             "
             SELECT labels.id, name, color, process_id
             FROM labels
@@ -54,16 +54,17 @@ impl QueryRoot {
         .map(|row| (row.get("process_id"), Label::from_row(row)))
         .fetch_all(&context.pool)
         .await?;
-        let labels_plan_id_map: HashMap<String, Vec<Label>> = labels_process_id.iter().fold(
-            HashMap::<String, Vec<Label>>::new(),
-            |mut acc: HashMap<String, Vec<Label>>, (process_id, label): &(String, Label)| {
-                let labels = acc.entry(process_id.to_owned()).or_insert_with(Vec::new);
-                labels.push(label.clone());
-                acc
-            },
-        );
+        let process_id_labels_hashmap: HashMap<String, Vec<Label>> =
+            process_id_labels_tuples.iter().fold(
+                HashMap::<String, Vec<Label>>::new(),
+                |mut acc: HashMap<String, Vec<Label>>, (process_id, label): &(String, Label)| {
+                    let labels = acc.entry(process_id.to_owned()).or_insert_with(Vec::new);
+                    labels.push(label.clone());
+                    acc
+                },
+            );
 
-        let agents_process_id = sqlx::query(
+        let process_id_agents_tuples = sqlx::query(
             "
             SELECT agents.id, name, unique_name, process_id
             FROM agents 
@@ -78,18 +79,177 @@ impl QueryRoot {
         .map(|row| (row.get("process_id"), Agent::from_row(row)))
         .fetch_all(&context.pool)
         .await?;
-        let agents_plan_id_map: HashMap<String, Vec<Agent>> = agents_process_id.iter().fold(
-            HashMap::<String, Vec<Agent>>::new(),
-            |mut acc: HashMap<String, Vec<Agent>>, (process_id, agent): &(String, Agent)| {
-                let agents = acc.entry(process_id.to_owned()).or_insert_with(Vec::new);
-                agents.push(agent.clone());
-                acc
-            },
-        );
+        let process_id_agents_hashmap: HashMap<String, Vec<Agent>> =
+            process_id_agents_tuples.iter().fold(
+                HashMap::<String, Vec<Agent>>::new(),
+                |mut acc: HashMap<String, Vec<Agent>>, (process_id, agent): &(String, Agent)| {
+                    let agents = acc.entry(process_id.to_owned()).or_insert_with(Vec::new);
+                    agents.push(agent.clone());
+                    acc
+                },
+            );
+        let process_id_commitments_tuples = sqlx::query(
+            "
+            SELECT id, description, inserted_at, process_id, action_id, assigned_agent_id, quantity, unit_id, resource_specification_id
+            FROM commitments 
+            WHERE commitments.process_id IN (
+                SELECT id FROM processes
+                WHERE processes.plan_id = ?
+            )",
+        )
+        .bind(&plan.id)
+        .map(|row| (row.get("process_id"), Commitment::from_row(row)))
+        .fetch_all(&context.pool)
+        .await?;
+        let process_id_commitments_hashmap: HashMap<String, Vec<Commitment>> =
+            process_id_commitments_tuples.iter().fold(
+                HashMap::<String, Vec<Commitment>>::new(),
+                |mut acc: HashMap<String, Vec<Commitment>>,
+                 (process_id, commitment): &(String, Commitment)| {
+                    let commitments = acc.entry(process_id.to_owned()).or_insert_with(Vec::new);
+                    commitments.push(commitment.clone());
+                    acc
+                },
+            );
+
+        let commitment_id_action_tuples = sqlx::query(
+            "
+            SELECT actions.id, name, input_output, actions.inserted_at, commitments.id AS commitment_id
+            FROM actions 
+            JOIN commitments
+            ON actions.id = commitments.action_id
+            JOIN processes
+            ON processes.id = commitments.process_id
+            WHERE processes.id IN (
+                SELECT id FROM processes
+                WHERE processes.plan_id = ?
+            )",
+        )
+        .bind(&plan.id)
+        .map(|row| (row.get("commitment_id"), Action::from_row(row)))
+        .fetch_all(&context.pool)
+        .await?;
+        let commitment_id_action_hashmap: HashMap<String, Action> =
+            commitment_id_action_tuples.iter().fold(
+                HashMap::<String, Action>::new(),
+                |mut acc: HashMap<String, Action>, (commitment_id, action): &(String, Action)| {
+                    let _ = acc
+                        .entry(commitment_id.to_owned())
+                        .or_insert_with(|| action.clone());
+                    acc
+                },
+            );
+
+        let commitment_id_resource_specification_tuples = sqlx::query(
+            "
+            SELECT resource_specifications.id, name, resource_specifications.inserted_at, commitments.id AS commitment_id
+            FROM resource_specifications 
+            JOIN commitments
+            ON resource_specifications.id = commitments.resource_specification_id
+            JOIN processes
+            ON processes.id = commitments.process_id
+            WHERE processes.id IN (
+                SELECT id FROM processes
+                WHERE processes.plan_id = ?
+            )",
+        )
+        .bind(&plan.id)
+        .map(|row| {
+            (
+                row.get("commitment_id"),
+                ResourceSpecification::from_row(row),
+            )
+        })
+        .fetch_all(&context.pool)
+        .await?;
+        let commitment_id_resource_specification_hashmap: HashMap<String, ResourceSpecification> =
+            commitment_id_resource_specification_tuples.iter().fold(
+                HashMap::<String, ResourceSpecification>::new(),
+                |mut acc: HashMap<String, ResourceSpecification>, (commitment_id, resource_specification): &(String, ResourceSpecification)| {
+                    let _ = acc.entry(commitment_id.to_owned()).or_insert_with(|| resource_specification.clone());
+                    acc
+                },
+            );
+
+        let commitment_id_unit_tuples = sqlx::query(
+            "
+            SELECT units.id, label, units.inserted_at, commitments.id AS commitment_id
+            FROM units 
+            JOIN commitments
+            ON units.id = commitments.unit_id
+            JOIN processes
+            ON processes.id = commitments.process_id
+            WHERE processes.id IN (
+                SELECT id FROM processes
+                WHERE processes.plan_id = ?
+            )",
+        )
+        .bind(&plan.id)
+        .map(|row| (row.get("commitment_id"), Unit::from_row(row)))
+        .fetch_all(&context.pool)
+        .await?;
+        let commitment_id_unit_hashmap: HashMap<String, Unit> =
+            commitment_id_unit_tuples.iter().fold(
+                HashMap::<String, Unit>::new(),
+                |mut acc: HashMap<String, Unit>, (commitment_id, unit): &(String, Unit)| {
+                    let _ = acc
+                        .entry(commitment_id.to_owned())
+                        .or_insert_with(|| unit.clone());
+                    acc
+                },
+            );
+
+        let commitment_id_agent_tuples = sqlx::query(
+            "
+            SELECT agents.id, name, unique_name, agents.inserted_at, commitments.id AS commitment_id
+            FROM agents 
+            JOIN commitments
+            ON agents.id = commitments.assigned_agent_id
+            JOIN processes
+            ON processes.id = commitments.process_id
+            WHERE processes.id IN (
+                SELECT id FROM processes
+                WHERE processes.plan_id = ?
+            )",
+        )
+        .bind(&plan.id)
+        .map(|row| (row.get("commitment_id"), Agent::from_row(row)))
+        .fetch_all(&context.pool)
+        .await?;
+        let commitment_id_agent_hashmap: HashMap<String, Agent> =
+            commitment_id_agent_tuples.iter().fold(
+                HashMap::<String, Agent>::new(),
+                |mut acc: HashMap<String, Agent>, (commitment_id, agent): &(String, Agent)| {
+                    let _ = acc
+                        .entry(commitment_id.to_owned())
+                        .or_insert_with(|| agent.clone());
+                    acc
+                },
+            );
 
         processes.iter_mut().for_each(|p| {
-            p.labels = labels_plan_id_map.get(&p.id).unwrap_or(&vec![]).clone();
-            p.agents = agents_plan_id_map.get(&p.id).unwrap_or(&vec![]).clone();
+            p.labels = process_id_labels_hashmap
+                .get(&p.id)
+                .unwrap_or(&vec![])
+                .clone();
+            p.agents = process_id_agents_hashmap
+                .get(&p.id)
+                .unwrap_or(&vec![])
+                .clone();
+
+            let mut commitments = process_id_commitments_hashmap
+                .get(&p.id)
+                .unwrap_or(&vec![])
+                .clone();
+            commitments.iter_mut().for_each(|c| {
+                c.action = commitment_id_action_hashmap.get(&c.id).cloned();
+                c.resource_specification = commitment_id_resource_specification_hashmap
+                    .get(&c.id)
+                    .cloned();
+                c.unit = commitment_id_unit_hashmap.get(&c.id).cloned();
+                c.assigned_agent = commitment_id_agent_hashmap.get(&c.id).cloned();
+            });
+            p.commitments = commitments;
         });
         plan.processes = processes;
         Ok(plan)
@@ -124,7 +284,10 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get all Resource specifications for an agent")]
-    async fn resource_specifications(context: &Context, agent_unique_name: String) -> FieldResult<Vec<ResourceSpecification>> {
+    async fn resource_specifications(
+        context: &Context,
+        agent_unique_name: String,
+    ) -> FieldResult<Vec<ResourceSpecification>> {
         let resource_specifications = sqlx::query_as::<_, ResourceSpecification>(
             "SELECT * FROM resource_specifications WHERE resource_specifications.agent_unique_name = ? ORDER BY inserted_at DESC",
         )
