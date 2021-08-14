@@ -9,6 +9,12 @@ fn unique_name(name: &str) -> String {
 }
 
 #[derive(GraphQLInputObject, Debug)]
+struct NewAgent {
+    name: String,
+    email: Option<String>,
+}
+
+#[derive(GraphQLInputObject, Debug)]
 struct NewPlan {
     title: String,
     agent_unique_name: String,
@@ -83,6 +89,31 @@ pub struct MutationRoot;
 
 #[graphql_object(Context=Context)]
 impl MutationRoot {
+    #[graphql(description = "Add new agent")]
+    async fn create_agent(context: &Context, new_agent: NewAgent) -> FieldResult<Agent> {
+        let ulid = Ulid::new().to_string();
+        let unique_name: String = unique_name(&new_agent.name);
+        sqlx::query("INSERT INTO agents (id, name, unique_name, email) VALUES (?, ?, ?, ?)")
+            .bind(&ulid)
+            .bind(new_agent.name)
+            .bind(unique_name)
+            .bind(new_agent.email)
+            .execute(&context.pool)
+            .await?;
+        let inserted_agent = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE id = ?")
+            .bind(ulid)
+            .fetch_one(&context.pool)
+            .await?;
+        Ok(inserted_agent)
+    }
+
+    async fn delete_agent(context: &Context, unique_name: String) -> FieldResult<i32> {
+        let result = sqlx::query("DELETE FROM agents WHERE unique_name = ?")
+            .bind(unique_name)
+            .execute(&context.pool)
+            .await?;
+        Ok(result.rows_affected() as i32)
+    }
     #[graphql(description = "Add a new label")]
     async fn create_label(context: &Context, new_label: NewLabel) -> FieldResult<Label> {
         let ulid = Ulid::new().to_string();
