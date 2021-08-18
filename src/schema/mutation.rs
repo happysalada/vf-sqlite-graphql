@@ -93,17 +93,19 @@ impl MutationRoot {
     async fn create_agent(context: &Context, new_agent: NewAgent) -> FieldResult<Agent> {
         let ulid = Ulid::new().to_string();
         let unique_name: String = unique_name(&new_agent.name);
-        sqlx::query("INSERT INTO agents (id, name, unique_name, email) VALUES (?, ?, ?, ?)")
-            .bind(&ulid)
-            .bind(new_agent.name)
-            .bind(unique_name)
-            .bind(new_agent.email)
-            .execute(&context.pool)
-            .await?;
-        let inserted_agent = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE id = ?")
-            .bind(ulid)
-            .fetch_one(&context.pool)
-            .await?;
+        let inserted_agent = sqlx::query_as::<_, Agent>(
+            "
+            INSERT INTO agents (id, name, unique_name, email)
+            VALUES (?, ?, ?, ?)
+            RETURNING *
+        ",
+        )
+        .bind(&ulid)
+        .bind(new_agent.name)
+        .bind(unique_name)
+        .bind(new_agent.email)
+        .fetch_one(&context.pool)
+        .await?;
         Ok(inserted_agent)
     }
 
@@ -118,20 +120,20 @@ impl MutationRoot {
     async fn create_label(context: &Context, new_label: NewLabel) -> FieldResult<Label> {
         let ulid = Ulid::new().to_string();
         let unique_name: String = unique_name(&new_label.name);
-        sqlx::query(
-            "INSERT INTO labels (id, name, unique_name, color, agent_unique_name) VALUES (?, ?, ?, ?, ?)",
+        let inserted_label = sqlx::query_as::<_, Label>(
+            "
+            INSERT INTO labels (id, name, unique_name, color, agent_unique_name)
+            VALUES (?, ?, ?, ?, ?)
+            RETURING *
+        ",
         )
         .bind(&ulid)
         .bind(new_label.name)
         .bind(unique_name)
         .bind(new_label.color)
         .bind(new_label.agent_unique_name)
-        .execute(&context.pool)
+        .fetch_one(&context.pool)
         .await?;
-        let inserted_label = sqlx::query_as::<_, Label>("SELECT * FROM labels WHERE id = ?")
-            .bind(ulid)
-            .fetch_one(&context.pool)
-            .await?;
         Ok(inserted_label)
     }
 
@@ -147,20 +149,21 @@ impl MutationRoot {
     #[graphql(description = "Add new plan")]
     async fn create_plan(context: &Context, new_plan: NewPlan) -> FieldResult<Plan> {
         let ulid = Ulid::new().to_string();
-        sqlx::query("INSERT INTO plans (id, title) VALUES (?, ?)")
-            .bind(&ulid)
-            .bind(new_plan.title)
-            .execute(&context.pool)
-            .await?;
+        let inserted_plan = sqlx::query(
+            "
+        INSERT INTO plans (id, title)
+        VALUES (?, ?)
+        RETURNING *",
+        )
+        .bind(&ulid)
+        .bind(new_plan.title)
+        .map(Plan::from_row)
+        .fetch_one(&context.pool)
+        .await?;
         sqlx::query("INSERT INTO plan_agents (plan_id, agent_unique_name) VALUES (?, ?)")
             .bind(&ulid)
             .bind(new_plan.agent_unique_name)
             .execute(&context.pool)
-            .await?;
-        let inserted_plan = sqlx::query("SELECT * FROM plans WHERE id = ?")
-            .bind(ulid)
-            .map(Plan::from_row)
-            .fetch_one(&context.pool)
             .await?;
         Ok(inserted_plan)
     }
@@ -180,17 +183,19 @@ impl MutationRoot {
     async fn create_process(context: &Context, new_process: NewProcess) -> FieldResult<Process> {
         let ulid = Ulid::new().to_string();
         // TODO put those in a transaction
-        sqlx::query(
+        let mut inserted_process = sqlx::query(
             "
             INSERT INTO processes (id, title, description, plan_id)
             VALUES (?, ?, ?, ?)
+            RETURNING *
             ",
         )
         .bind(&ulid)
         .bind(new_process.title)
         .bind(new_process.description)
         .bind(new_process.plan_id)
-        .execute(&context.pool)
+        .map(Process::from_row)
+        .fetch_one(&context.pool)
         .await?;
         // TODO paralelize queries
         let new_process_labels = new_process
@@ -220,11 +225,6 @@ impl MutationRoot {
         join_all(new_process_labels).await;
         join_all(new_process_agents).await;
 
-        let mut inserted_process = sqlx::query("SELECT * FROM processes WHERE id = ?")
-            .bind(&ulid)
-            .map(Process::from_row)
-            .fetch_one(&context.pool)
-            .await?;
         let labels = sqlx::query(
             "
            SELECT labels.id, name, color
@@ -328,19 +328,16 @@ impl MutationRoot {
     ) -> FieldResult<ResourceSpecification> {
         let ulid = Ulid::new().to_string();
         let unique_name: String = unique_name(&new_resource_specification.name);
-        sqlx::query(
-            "INSERT INTO resource_specifications (id, name, unique_name, agent_unique_name) VALUES (?, ?, ?, ?)",
+        let inserted_resource_specification = sqlx::query_as::<_, ResourceSpecification>(
+            "INSERT INTO resource_specifications
+                    (id, name, unique_name, agent_unique_name)
+                VALUES (?, ?, ?, ?)
+                RETURNING *",
         )
         .bind(&ulid)
         .bind(new_resource_specification.name)
         .bind(unique_name)
         .bind(new_resource_specification.agent_unique_name)
-        .execute(&context.pool)
-        .await?;
-        let inserted_resource_specification = sqlx::query_as::<_, ResourceSpecification>(
-            "SELECT * FROM resource_specifications WHERE id = ?",
-        )
-        .bind(ulid)
         .fetch_one(&context.pool)
         .await?;
         Ok(inserted_resource_specification)
@@ -365,10 +362,11 @@ impl MutationRoot {
     ) -> FieldResult<Commitment> {
         let ulid = Ulid::new().to_string();
         // TODO put those in a transaction
-        sqlx::query(
+        let mut inserted_commitment= sqlx::query(
             "
             INSERT INTO commitments (id, description, process_id, action_id, assigned_agent_id, quantity, unit_id, resource_specification_id, due_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING *
             ",
         )
         .bind(&ulid)
@@ -380,13 +378,9 @@ impl MutationRoot {
         .bind(new_commitment.unit_id)
         .bind(new_commitment.resource_specification_id)
         .bind(new_commitment.due_at)
-        .execute(&context.pool)
+        .map(Commitment::from_row)
+        .fetch_one(&context.pool)
         .await?;
-        let mut inserted_commitment = sqlx::query("SELECT * FROM commitments WHERE id = ?")
-            .bind(&ulid)
-            .map(Commitment::from_row)
-            .fetch_one(&context.pool)
-            .await?;
         let action = sqlx::query_as::<_, Action>(
             "
            SELECT *
