@@ -121,11 +121,9 @@ impl MutationRoot {
         let ulid = Ulid::new().to_string();
         let unique_name: String = unique_name(&new_label.name);
         let inserted_label = sqlx::query_as::<_, Label>(
-            "
-            INSERT INTO labels (id, name, unique_name, color, agent_unique_name)
+            "INSERT INTO labels (id, name, unique_name, color, agent_unique_name)
             VALUES (?, ?, ?, ?, ?)
-            RETURING *
-        ",
+            RETURNING *",
         )
         .bind(&ulid)
         .bind(new_label.name)
