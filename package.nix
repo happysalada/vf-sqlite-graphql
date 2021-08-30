@@ -1,15 +1,15 @@
-{ pkgs, self }:
+{ pkgs }:
 with pkgs;
 
 rustPlatform.buildRustPackage rec {
   pname = "vf-graphql-sqlite-backend";
   version = "0.0.1";
 
-  src = self;
+  src = ./.;
   cargoLock = {
     lockFile = ./Cargo.lock;
   };
-  nativeBuildInputs = [ pkg-config ];
+  nativeBuildInputs = [ pkg-config rust-bin.stable.latest.default ];
   buildInputs = [ openssl ] ++ lib.optionals stdenv.isDarwin [
     darwin.apple_sdk.frameworks.Security
     darwin.apple_sdk.frameworks.CoreFoundation

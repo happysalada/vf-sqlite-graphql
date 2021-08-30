@@ -2,14 +2,14 @@
   description = "A devShell example";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs";
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
   outputs = { self, nixpkgs, rust-overlay, ... }:
     let
       package_overlay = final: prev: {
-        vf-backend = import ./package.nix { pkgs = final; inherit self; };
+        vf-backend = import ./package.nix { pkgs = final; };
       };
       # taken from https://github.com/ngi-nix/project-template/blob/master/flake.nix
       # System types to support.
