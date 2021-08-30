@@ -20,26 +20,26 @@ pub struct Context {
 impl juniper::Context for Context {}
 
 async fn handle_graphiql(conn: Conn) -> Conn {
-    conn.with_header(("content-type", "text/html"))
+    conn.with_header("content-type", "text/html")
         .ok(graphiql::graphiql_source("/graphql", None))
 }
 
 async fn handle_graphql(mut conn: Conn) -> Conn {
-    let raw_body = conn_try!(conn, conn.request_body_string().await);
-    let query: GraphQLRequest = conn_try!(conn, serde_json::from_str(&raw_body));
+    let raw_body = conn_try!(conn.request_body_string().await, conn);
+    let query: GraphQLRequest = conn_try!(serde_json::from_str(&raw_body), conn);
     let context = Context {
         pool: conn.state::<SqlitePool>().unwrap().to_owned(),
     };
     let response = query.execute(&SCHEMA, &context).await;
-    let json = conn_try!(conn, serde_json::to_string(&response));
+    let json = conn_try!(serde_json::to_string(&response), conn);
     conn.ok(json)
-        .with_header(("Access-Control-Allow-Origin", "*"))
-        .with_header(("content-type", "application/json"))
+        .with_header("Access-Control-Allow-Origin", "*")
+        .with_header("content-type", "application/json")
 }
 
 async fn cors(conn: Conn) -> Conn {
-    conn.with_header(("Access-Control-Allow-Origin", "*"))
-        .with_header(("Access-Control-Allow-Headers", "content-type"))
+    conn.with_header("Access-Control-Allow-Origin", "*")
+        .with_header("Access-Control-Allow-Headers", "content-type")
 }
 
 async fn not_found(conn: Conn) -> Conn {
