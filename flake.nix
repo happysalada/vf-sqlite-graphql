@@ -22,7 +22,7 @@
       nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; overlays = self.overlays; });
     in
     {
-      overlays = [ (import rust-overlay) package_overlay ];
+      overlays = [ rust-overlay.overlay package_overlay ];
       packages = forAllSystems (system:
         {
           inherit (nixpkgsFor.${system}) vf-backend;
@@ -36,10 +36,9 @@
           in
           pkgs.mkShell {
             buildInputs = with pkgs; [
-              exa
-              fd
               rust-bin.stable.latest.default
               sqlite
+              crate2nix
             ] ++ lib.optionals stdenv.isDarwin [
               libiconv
               darwin.apple_sdk.frameworks.Security

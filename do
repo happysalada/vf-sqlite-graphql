@@ -7,6 +7,7 @@ proc dev() {
 proc update_deps() {
   cargo update
   cargo upgrade
+  crate2nix generate
 }
 proc reset_db {
   sqlx database reset -y
