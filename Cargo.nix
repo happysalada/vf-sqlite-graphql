@@ -544,10 +544,10 @@ rec {
       };
       "cc" = rec {
         crateName = "cc";
-        version = "1.0.69";
+        version = "1.0.70";
         edition = "2018";
         crateBin = [];
-        sha256 = "1cly36mskqby2yqiygls7myd0qjcfrvxcyw2cf4qdqbc5kvc4377";
+        sha256 = "1h0dm9pr7l2g6228pzl5fawd43s3zjkfzxvhvczgm154nvj6qsnj";
         authors = [
           "Alex Crichton <alex@alexcrichton.com>"
         ];
@@ -1869,9 +1869,9 @@ rec {
       };
       "js-sys" = rec {
         crateName = "js-sys";
-        version = "0.3.53";
+        version = "0.3.54";
         edition = "2018";
-        sha256 = "17cpq8zw2dlv0vhc5hw7y0a122kpgncvgx4rkiyhfq991valkgz4";
+        sha256 = "0m42j63ccxjhypmxpc9dmmx0nb18cczvwg270zkfay68v5av6rhq";
         authors = [
           "The wasm-bindgen Developers"
         ];
@@ -2185,17 +2185,14 @@ rec {
       };
       "minimal-lexical" = rec {
         crateName = "minimal-lexical";
-        version = "0.1.2";
+        version = "0.1.3";
         edition = "2018";
-        sha256 = "1cn4r3xn9xgxsn256npj8nmkq0rfzdn8zr48w0zkrx1lxllbp5b5";
+        sha256 = "0v9c06nbn61w7cdz2iihgqlppzzvn72wcvv3b2yy0s2gjx45k0qc";
         authors = [
           "Alex Huszagh <ahuszagh@gmail.com>"
         ];
         features = {
-          "comprehensive_float_test" = [ "rand/std" "serde/std" "serde_derive" "std" "toml" ];
           "default" = [ "std" ];
-          "no_alloc" = [ "arrayvec" ];
-          "rng" = [ "rand_core" "rand_xorshift" "ryu" ];
         };
         resolvedDefaultFeatures = [ "default" "std" ];
       };
@@ -2386,117 +2383,6 @@ rec {
         };
         resolvedDefaultFeatures = [ "default" "user" ];
       };
-      "num" = rec {
-        crateName = "num";
-        version = "0.4.0";
-        edition = "2018";
-        sha256 = "01j6k8kjad0a96297j3qjhdhrc6cgmzhf52i0sd7yd0d2z8ndns3";
-        authors = [
-          "The Rust Project Developers"
-        ];
-        dependencies = [
-          {
-            name = "num-bigint";
-            packageId = "num-bigint";
-            optional = true;
-            usesDefaultFeatures = false;
-          }
-          {
-            name = "num-complex";
-            packageId = "num-complex";
-            usesDefaultFeatures = false;
-          }
-          {
-            name = "num-integer";
-            packageId = "num-integer";
-            usesDefaultFeatures = false;
-            features = [ "i128" ];
-          }
-          {
-            name = "num-iter";
-            packageId = "num-iter";
-            usesDefaultFeatures = false;
-            features = [ "i128" ];
-          }
-          {
-            name = "num-rational";
-            packageId = "num-rational";
-            usesDefaultFeatures = false;
-          }
-          {
-            name = "num-traits";
-            packageId = "num-traits";
-            usesDefaultFeatures = false;
-            features = [ "i128" ];
-          }
-        ];
-        features = {
-          "alloc" = [ "num-bigint" "num-rational/num-bigint" ];
-          "default" = [ "std" ];
-          "libm" = [ "num-complex/libm" "num-traits/libm" ];
-          "rand" = [ "num-bigint/rand" "num-complex/rand" ];
-          "serde" = [ "num-bigint/serde" "num-complex/serde" "num-rational/serde" ];
-          "std" = [ "num-bigint/std" "num-complex/std" "num-integer/std" "num-iter/std" "num-rational/std" "num-rational/num-bigint-std" "num-traits/std" ];
-        };
-        resolvedDefaultFeatures = [ "default" "num-bigint" "std" ];
-      };
-      "num-bigint" = rec {
-        crateName = "num-bigint";
-        version = "0.4.1";
-        edition = "2018";
-        sha256 = "0j0ypw0sbkslp0h551qjr9bylhh6yal5a0539g1gdawm4x0prsbn";
-        authors = [
-          "The Rust Project Developers"
-        ];
-        dependencies = [
-          {
-            name = "num-integer";
-            packageId = "num-integer";
-            usesDefaultFeatures = false;
-            features = [ "i128" ];
-          }
-          {
-            name = "num-traits";
-            packageId = "num-traits";
-            usesDefaultFeatures = false;
-            features = [ "i128" ];
-          }
-        ];
-        buildDependencies = [
-          {
-            name = "autocfg";
-            packageId = "autocfg 1.0.1";
-          }
-        ];
-        features = {
-          "default" = [ "std" ];
-          "std" = [ "num-integer/std" "num-traits/std" ];
-        };
-        resolvedDefaultFeatures = [ "std" ];
-      };
-      "num-complex" = rec {
-        crateName = "num-complex";
-        version = "0.4.0";
-        edition = "2018";
-        sha256 = "11ahq51ibf7x30rsabgp3a29zw6d6bfilz53sj152z5vpdkkd1r6";
-        authors = [
-          "The Rust Project Developers"
-        ];
-        dependencies = [
-          {
-            name = "num-traits";
-            packageId = "num-traits";
-            usesDefaultFeatures = false;
-            features = [ "i128" ];
-          }
-        ];
-        features = {
-          "default" = [ "std" ];
-          "libm" = [ "num-traits/libm" ];
-          "std" = [ "num-traits/std" ];
-        };
-        resolvedDefaultFeatures = [ "std" ];
-      };
       "num-integer" = rec {
         crateName = "num-integer";
         version = "0.1.44";
@@ -2523,81 +2409,6 @@ rec {
           "i128" = [ "num-traits/i128" ];
           "std" = [ "num-traits/std" ];
         };
-        resolvedDefaultFeatures = [ "i128" "std" ];
-      };
-      "num-iter" = rec {
-        crateName = "num-iter";
-        version = "0.1.42";
-        edition = "2015";
-        sha256 = "0ndd9wb9qar50fdr16xm3i1zk6h2g9br56nml2n22kd56y1iq0mj";
-        authors = [
-          "The Rust Project Developers"
-        ];
-        dependencies = [
-          {
-            name = "num-integer";
-            packageId = "num-integer";
-            usesDefaultFeatures = false;
-          }
-          {
-            name = "num-traits";
-            packageId = "num-traits";
-            usesDefaultFeatures = false;
-          }
-        ];
-        buildDependencies = [
-          {
-            name = "autocfg";
-            packageId = "autocfg 1.0.1";
-          }
-        ];
-        features = {
-          "default" = [ "std" ];
-          "i128" = [ "num-integer/i128" "num-traits/i128" ];
-          "std" = [ "num-integer/std" "num-traits/std" ];
-        };
-        resolvedDefaultFeatures = [ "i128" "std" ];
-      };
-      "num-rational" = rec {
-        crateName = "num-rational";
-        version = "0.4.0";
-        edition = "2018";
-        sha256 = "0ska19zb05f84b1cki7vyzy5wjqs26y82hiq1d9gabbw2syh45yl";
-        authors = [
-          "The Rust Project Developers"
-        ];
-        dependencies = [
-          {
-            name = "num-bigint";
-            packageId = "num-bigint";
-            optional = true;
-            usesDefaultFeatures = false;
-          }
-          {
-            name = "num-integer";
-            packageId = "num-integer";
-            usesDefaultFeatures = false;
-            features = [ "i128" ];
-          }
-          {
-            name = "num-traits";
-            packageId = "num-traits";
-            usesDefaultFeatures = false;
-            features = [ "i128" ];
-          }
-        ];
-        buildDependencies = [
-          {
-            name = "autocfg";
-            packageId = "autocfg 1.0.1";
-          }
-        ];
-        features = {
-          "default" = [ "num-bigint-std" "std" ];
-          "num-bigint-std" = [ "num-bigint/std" ];
-          "std" = [ "num-integer/std" "num-traits/std" ];
-        };
-        resolvedDefaultFeatures = [ "num-bigint" "num-bigint-std" "std" ];
       };
       "num-traits" = rec {
         crateName = "num-traits";
@@ -2616,7 +2427,7 @@ rec {
         features = {
           "default" = [ "std" ];
         };
-        resolvedDefaultFeatures = [ "default" "i128" "std" ];
+        resolvedDefaultFeatures = [ "default" "std" ];
       };
       "num_cpus" = rec {
         crateName = "num_cpus";
@@ -3041,9 +2852,9 @@ rec {
       };
       "proc-macro2" = rec {
         crateName = "proc-macro2";
-        version = "1.0.28";
+        version = "1.0.29";
         edition = "2018";
-        sha256 = "04k6kwfsl56xqv46f9k88jmj7x4544hhbr6xswzfm1mqqywdhzjw";
+        sha256 = "0gfj25ksq90ifcssfnwv46v856sxd885wmm9bhrj1ays9xfi1xdr";
         authors = [
           "Alex Crichton <alex@alexcrichton.com>"
           "David Tolnay <dtolnay@gmail.com>"
@@ -3814,9 +3625,9 @@ rec {
       };
       "security-framework" = rec {
         crateName = "security-framework";
-        version = "2.4.1";
+        version = "2.4.2";
         edition = "2018";
-        sha256 = "0y4djxfqbmk3l9m9wk5dmqj9bd0d1qvm86jldj6yd84nnfh1c43c";
+        sha256 = "11vwvw2qnrf1z8i0ncbj9456vxwnwq9wyi9c2n6rkqd2znmw2nsj";
         authors = [
           "Steven Fackler <sfackler@gmail.com>"
           "Kornel <kornel@geekhood.net>"
@@ -3839,10 +3650,6 @@ rec {
             packageId = "libc";
           }
           {
-            name = "num";
-            packageId = "num";
-          }
-          {
             name = "security-framework-sys";
             packageId = "security-framework-sys";
             usesDefaultFeatures = false;
@@ -3852,18 +3659,19 @@ rec {
           "OSX_10_10" = [ "OSX_10_9" "security-framework-sys/OSX_10_10" ];
           "OSX_10_11" = [ "OSX_10_10" "security-framework-sys/OSX_10_11" ];
           "OSX_10_12" = [ "OSX_10_11" "security-framework-sys/OSX_10_12" ];
-          "OSX_10_13" = [ "OSX_10_12" "security-framework-sys/OSX_10_13" "alpn" "session-tickets" ];
+          "OSX_10_13" = [ "OSX_10_12" "security-framework-sys/OSX_10_13" "alpn" "session-tickets" "serial-number-bigint" ];
           "OSX_10_14" = [ "OSX_10_13" "security-framework-sys/OSX_10_14" ];
           "OSX_10_9" = [ "security-framework-sys/OSX_10_9" ];
           "default" = [ "OSX_10_9" ];
+          "serial-number-bigint" = [ "num-bigint" ];
         };
         resolvedDefaultFeatures = [ "OSX_10_9" "default" ];
       };
       "security-framework-sys" = rec {
         crateName = "security-framework-sys";
-        version = "2.4.1";
+        version = "2.4.2";
         edition = "2018";
-        sha256 = "00pw7az3ibrdwxrrg4qbwy3nxiv173vk121z5djzhc2sv2f1fvrz";
+        sha256 = "0zlwc46mb7zkm4ngq5qv52zczvvk0l8kjr6npyvjidb067c19pd9";
         authors = [
           "Steven Fackler <sfackler@gmail.com>"
           "Kornel <kornel@geekhood.net>"
@@ -3984,9 +3792,9 @@ rec {
       };
       "sha2" = rec {
         crateName = "sha2";
-        version = "0.9.6";
+        version = "0.9.8";
         edition = "2018";
-        sha256 = "1wq376d84qk0633sj1wyqnjc07mh3j91qbf84fpwba4p2ldc814j";
+        sha256 = "1ypm6d7536j0l868x5cai84ahpsjz53yblizm9dlrms0jx69m7xn";
         authors = [
           "RustCrypto Developers"
         ];
@@ -4030,9 +3838,9 @@ rec {
       };
       "signal-hook" = rec {
         crateName = "signal-hook";
-        version = "0.3.9";
+        version = "0.3.10";
         edition = "2018";
-        sha256 = "0f8ccp4ddd4jxa8infvxnyn3fvxswq46mw5ajh0awvq7jximl327";
+        sha256 = "1lgg8rwyz97pqkpg4ii7iswvs5mx8sgg2pl2ahlil9vyfcfqk64w";
         authors = [
           "Michal 'vorner' Vaner <vorner@vorner.cz>"
           "Thomas Himmelstoss <thimm@posteo.de>"
@@ -4685,9 +4493,9 @@ rec {
       };
       "syn" = rec {
         crateName = "syn";
-        version = "1.0.75";
+        version = "1.0.76";
         edition = "2018";
-        sha256 = "19vfj2l02g170nyhfx1d9cz97n8va6zsldy4zv2hj05airz8zxdp";
+        sha256 = "110vb9zy9fvijppwpalz5qh9g4g6y0m4vgrd4iaj0b1c83dhgwf6";
         authors = [
           "David Tolnay <dtolnay@gmail.com>"
         ];
@@ -4778,9 +4586,9 @@ rec {
       };
       "thiserror" = rec {
         crateName = "thiserror";
-        version = "1.0.28";
+        version = "1.0.29";
         edition = "2018";
-        sha256 = "1v7n0id0lzws1d6vcvj34l970vpv3pf1lsfrqy561y9xwqq54g98";
+        sha256 = "124v54fr3b3i230naz4j04l401dnf2fb0d1g5fg3d0rd9c3clbk0";
         authors = [
           "David Tolnay <dtolnay@gmail.com>"
         ];
@@ -4794,9 +4602,9 @@ rec {
       };
       "thiserror-impl" = rec {
         crateName = "thiserror-impl";
-        version = "1.0.28";
+        version = "1.0.29";
         edition = "2018";
-        sha256 = "0wcfsqdy9myvml8kyphknd72x0yfgnzhkm7210vcvx8ihqi88f7s";
+        sha256 = "0k290k93cs3gfmfjfdz23srx3rl0grj3lxh0hhjxxs3q5k657mds";
         procMacro = true;
         authors = [
           "David Tolnay <dtolnay@gmail.com>"
@@ -5051,9 +4859,9 @@ rec {
       };
       "trillium-http" = rec {
         crateName = "trillium-http";
-        version = "0.2.0";
+        version = "0.2.1";
         edition = "2018";
-        sha256 = "14v4gsjr7d4j02iaxsww05v49v09ikxkkms6m103hc44958n79kn";
+        sha256 = "00sq61wvr56apl2xb1val5zx75z4x6acmwlpsqcryb0wkv8w9h4v";
         authors = [
           "Jacob Rothstein <hi@jbr.me>"
         ];
@@ -5120,9 +4928,9 @@ rec {
       };
       "trillium-logger" = rec {
         crateName = "trillium-logger";
-        version = "0.2.0";
+        version = "0.4.0";
         edition = "2018";
-        sha256 = "0av2r4vain271y454lz8cfvd2z23dgbjsv6y308z7rc8ggf8zr4b";
+        sha256 = "1k8gqwviav9nk7yqjcsj700kpg49wndkyxyjbr31q0m2l6aix811";
         authors = [
           "Jacob Rothstein <hi@jbr.me>"
         ];
@@ -5364,9 +5172,9 @@ rec {
       };
       "typenum" = rec {
         crateName = "typenum";
-        version = "1.13.0";
+        version = "1.14.0";
         edition = "2018";
-        sha256 = "01lbbspn4080yg8wp6y7q3xcqih1c1dmkkx4pwax4z1a9436k7w7";
+        sha256 = "1v2r349b2dr0pknpjk3nkrbi3mhaa3wl7zi7bdbla4zmcni0hdxn";
         build = "build/main.rs";
         authors = [
           "Paho Lurie-Gregg <paho@paholg.com>"
@@ -5651,9 +5459,9 @@ rec {
       };
       "wasm-bindgen" = rec {
         crateName = "wasm-bindgen";
-        version = "0.2.76";
+        version = "0.2.77";
         edition = "2018";
-        sha256 = "1q43y7wpg6539b7d4j7wfs5yv0d3l9zx9ra8f1v367912ssv3scc";
+        sha256 = "0v07kgfgac9rgqbhfpabjcn9kgj8iazvaxvr7i6w5kmyns6k6s2y";
         authors = [
           "The wasm-bindgen Developers"
         ];
@@ -5679,9 +5487,9 @@ rec {
       };
       "wasm-bindgen-backend" = rec {
         crateName = "wasm-bindgen-backend";
-        version = "0.2.76";
+        version = "0.2.77";
         edition = "2018";
-        sha256 = "0ha06vbc3dkkzdjx7l8x1fi4yq01hiabzdgl8pwaasrjw9wdrs6g";
+        sha256 = "08wm4rsiqji5djsn7d2xclraqg2gd6dpq70cp8ymhn069xdl0k7k";
         authors = [
           "The wasm-bindgen Developers"
         ];
@@ -5723,9 +5531,9 @@ rec {
       };
       "wasm-bindgen-macro" = rec {
         crateName = "wasm-bindgen-macro";
-        version = "0.2.76";
+        version = "0.2.77";
         edition = "2018";
-        sha256 = "1vwz0sw2r38ypgif7pngvfyx833wn2m3w0kcdffiv11m6fjqlij4";
+        sha256 = "1j3pxibynpv2f5phhmsf32r7ls2i88r9r3qaazf1jfz81dcadmdr";
         procMacro = true;
         authors = [
           "The wasm-bindgen Developers"
@@ -5748,9 +5556,9 @@ rec {
       };
       "wasm-bindgen-macro-support" = rec {
         crateName = "wasm-bindgen-macro-support";
-        version = "0.2.76";
+        version = "0.2.77";
         edition = "2018";
-        sha256 = "1bgv4pffx0xm9wb5hf5gcsbys1l26b3k4qf6gpkg2fki49wq1581";
+        sha256 = "14iy274x0xp4rjgfzb19nhg7han93ji82jd8v2ps1xf61l1mlxz3";
         authors = [
           "The wasm-bindgen Developers"
         ];
@@ -5785,9 +5593,9 @@ rec {
       };
       "wasm-bindgen-shared" = rec {
         crateName = "wasm-bindgen-shared";
-        version = "0.2.76";
+        version = "0.2.77";
         edition = "2018";
-        sha256 = "0aaa3zyfvppzzflifd7a069mjivp7zj7gz89bzxa2x2mhid0gnxc";
+        sha256 = "1d72hyf2h7rzrjbzmb6dn2gvprmyn2vkbahyiwm7bs58qxvf6yf2";
         authors = [
           "The wasm-bindgen Developers"
         ];
@@ -5795,9 +5603,9 @@ rec {
       };
       "web-sys" = rec {
         crateName = "web-sys";
-        version = "0.3.53";
+        version = "0.3.54";
         edition = "2018";
-        sha256 = "0g3q7a4wy9ix07664f0cabnnc83w6q3pi9pibq2n144icxmjyjr2";
+        sha256 = "0nhr1p1mp85p8gkkqdh590jw7f51pks7igd54qnxmln73q6xg10a";
         authors = [
           "The wasm-bindgen Developers"
         ];
