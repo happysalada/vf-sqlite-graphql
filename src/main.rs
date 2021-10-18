@@ -93,7 +93,7 @@ mod tests {
             post("/graphql")
                 .with_request_body(r#"{"query": "{ agents {id, name, email}}"}"#)
                 .on(&application),
-            StatusCode::Ok,
+            Status::Ok,
             r#"{"data":{"agents":[]}}"#,
         );
     }
