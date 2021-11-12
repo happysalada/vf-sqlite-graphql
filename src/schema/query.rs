@@ -8,9 +8,17 @@ pub struct QueryRoot;
 
 #[graphql_object(Context=Context)]
 impl QueryRoot {
-    #[graphql(description = "Get all Agents")]
-    async fn agents(context: &Context) -> FieldResult<Vec<Agent>> {
-        let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents ORDER BY inserted_at DESC")
+    #[graphql(description = "Get all Individuals")]
+    async fn individuals(context: &Context) -> FieldResult<Vec<Agent>> {
+        let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE agents.agent_type == 'Individual' ORDER BY inserted_at DESC")
+            .fetch_all(&context.pool)
+            .await?;
+        Ok(agents.to_vec())
+    }
+
+    #[graphql(description = "Get all Organizations")]
+    async fn organizations(context: &Context) -> FieldResult<Vec<Agent>> {
+        let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE agents.agent_type == 'Organization' ORDER BY inserted_at DESC")
             .fetch_all(&context.pool)
             .await?;
         Ok(agents.to_vec())

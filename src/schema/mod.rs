@@ -28,6 +28,17 @@ impl Plan {
     }
 }
 
+#[derive(sqlx::Type, Clone, Debug, GraphQLEnum)]
+enum AgentType {
+    Individual,
+    Organization,
+}
+impl Default for AgentType {
+    fn default() -> Self {
+        AgentType::Individual
+    }
+}
+
 #[derive(Clone, GraphQLObject, FromRow, Debug, Default)]
 #[graphql(description = "An agent")]
 struct Agent {
@@ -35,6 +46,7 @@ struct Agent {
     name: String,
     unique_name: String,
     email: Option<String>,
+    agent_type: AgentType,
     inserted_at: String,
 }
 
@@ -44,6 +56,7 @@ impl Agent {
             id: row.get("id"),
             name: row.get("name"),
             unique_name: row.get("unique_name"),
+            agent_type: row.get("type"),
             ..Default::default()
         }
     }

@@ -544,10 +544,10 @@ rec {
       };
       "cc" = rec {
         crateName = "cc";
-        version = "1.0.71";
+        version = "1.0.72";
         edition = "2018";
         crateBin = [];
-        sha256 = "1pgflzb5dc9pli1lfwfv5jksmz57j15iqqxqpdbnjq4lclfnihkr";
+        sha256 = "1vl50h2qh0nh0iddzj6gd1pnxnxpvwmbfxc30578c1pajmxi7a92";
         authors = [
           "Alex Crichton <alex@alexcrichton.com>"
         ];
@@ -777,11 +777,12 @@ rec {
       };
       "crc" = rec {
         crateName = "crc";
-        version = "2.0.0";
+        version = "2.1.0";
         edition = "2018";
-        sha256 = "17w853d05xr823awmbjbpj5c6vjxm0rxj71fhykhh0a6jlkp5hhh";
+        sha256 = "08qfahmly0n5j27g1vkqx9s6mxhm8k4dsp61ykskazyabdlrmz29";
         authors = [
           "Rui Hu <code@mrhooray.com>"
+          "Akhil Velagapudi <4@4khil.com>"
         ];
         dependencies = [
           {
@@ -2040,9 +2041,9 @@ rec {
       };
       "libc" = rec {
         crateName = "libc";
-        version = "0.2.104";
+        version = "0.2.107";
         edition = "2015";
-        sha256 = "1knzxi1fk75yfz6zqf160yc55awh7gdpx6viwwlikkz1038rcbvv";
+        sha256 = "06fjyglysl1aph07hc8cl1akw25lizcvwppqbralynys0hsf5rgv";
         authors = [
           "The Rust Project Developers"
         ];
@@ -2197,16 +2198,16 @@ rec {
       };
       "minimal-lexical" = rec {
         crateName = "minimal-lexical";
-        version = "0.1.4";
+        version = "0.2.1";
         edition = "2018";
-        sha256 = "0xynhr97vyv5n5lls41dl7bfa3ba122lix9mqij1l7yprl6n6r4w";
+        sha256 = "16ppc5g84aijpri4jzv14rvcnslvlpphbszc7zzp6vfkddf4qdb8";
         authors = [
           "Alex Huszagh <ahuszagh@gmail.com>"
         ];
         features = {
           "default" = [ "std" ];
         };
-        resolvedDefaultFeatures = [ "default" "std" ];
+        resolvedDefaultFeatures = [ "std" ];
       };
       "mio" = rec {
         crateName = "mio";
@@ -2345,9 +2346,9 @@ rec {
       };
       "nom" = rec {
         crateName = "nom";
-        version = "7.0.0";
+        version = "7.1.0";
         edition = "2018";
-        sha256 = "1ha24yclw4m74gi9p5c3d68rhrrcb7qvkgicz153p5cahck9vzbz";
+        sha256 = "0281jdx0xcyhjgs1jkj9pii8py1clcpazg41bgz7d71qxzhi278v";
         authors = [
           "contact@geoffroycouprie.com"
         ];
@@ -2360,6 +2361,7 @@ rec {
           {
             name = "minimal-lexical";
             packageId = "minimal-lexical";
+            usesDefaultFeatures = false;
           }
         ];
         buildDependencies = [
@@ -2370,7 +2372,7 @@ rec {
         ];
         features = {
           "default" = [ "std" ];
-          "std" = [ "alloc" "memchr/use_std" ];
+          "std" = [ "alloc" "memchr/std" "minimal-lexical/std" ];
         };
         resolvedDefaultFeatures = [ "alloc" "default" "std" ];
       };
@@ -2489,9 +2491,9 @@ rec {
       };
       "openssl" = rec {
         crateName = "openssl";
-        version = "0.10.36";
+        version = "0.10.38";
         edition = "2018";
-        sha256 = "0jpz4nj3q8y9xqqhbvvgsqcdinkgv125s4kg80ybgh7yfvdsr7wd";
+        sha256 = "15baqlphisr1f7ddq11jnrrzz4shdh35kwal24adyc2c4cif4yhc";
         authors = [
           "Steven Fackler <sfackler@gmail.com>"
         ];
@@ -2538,9 +2540,9 @@ rec {
       };
       "openssl-sys" = rec {
         crateName = "openssl-sys";
-        version = "0.9.67";
+        version = "0.9.70";
         edition = "2015";
-        sha256 = "0n5023ri01wfx54rr1zndi8qda6mhzscdpj09gsamqvczj6jvpv9";
+        sha256 = "1pryvrgwc7qrr8rq7smmkz2hqc3zzxjss7b6ldfnn8pqnf3pjlf6";
         build = "build/main.rs";
         authors = [
           "Alex Crichton <alex@alexcrichton.com>"
@@ -2737,9 +2739,9 @@ rec {
       };
       "pkg-config" = rec {
         crateName = "pkg-config";
-        version = "0.3.21";
+        version = "0.3.22";
         edition = "2015";
-        sha256 = "0vg6ysfj5bxaf3c5dfaqmy1laf2d231qd8s0w3469gpccjxzrqhh";
+        sha256 = "07vy6mn0q6k2adrs7min3rpy999q7kprph0vb1414iwlybs5sa8j";
         authors = [
           "Alex Crichton <alex@alexcrichton.com>"
         ];
@@ -2763,9 +2765,9 @@ rec {
       };
       "ppv-lite86" = rec {
         crateName = "ppv-lite86";
-        version = "0.2.14";
+        version = "0.2.15";
         edition = "2018";
-        sha256 = "0hdp3m8f1d0rlfmlf7n2a5ndzjh2ybpc816d2npg97qjs0dh3jn3";
+        sha256 = "1fimwnyyh3wx33r5s77lw5g5vcxhw1p5j60pdvbbwr8l374gn37d";
         authors = [
           "The CryptoCorrosion Contributors"
         ];
@@ -2864,12 +2866,12 @@ rec {
       };
       "proc-macro2" = rec {
         crateName = "proc-macro2";
-        version = "1.0.30";
+        version = "1.0.32";
         edition = "2018";
-        sha256 = "0w7fc5mvk7jsfgn1pmiphkvjd0min12zj1y0l1zqpg37pj73bhzd";
+        sha256 = "0hqbxlvhiaybakl1gai3mgps1dxsmxricxsr2rfdrh222z0qql5s";
         authors = [
-          "Alex Crichton <alex@alexcrichton.com>"
           "David Tolnay <dtolnay@gmail.com>"
+          "Alex Crichton <alex@alexcrichton.com>"
         ];
         dependencies = [
           {
@@ -3765,9 +3767,9 @@ rec {
       };
       "serde_json" = rec {
         crateName = "serde_json";
-        version = "1.0.68";
+        version = "1.0.69";
         edition = "2018";
-        sha256 = "1n2jg9cf14lrxasj63rlrwxlw5v79m851gycw6zy20jnjx9hhs8g";
+        sha256 = "1y22sfi9z3bkf9j6qnd036cqgraq0kr94ss7sghcfa8i8d78crp4";
         authors = [
           "Erick Tryzelaar <erick.tryzelaar@gmail.com>"
           "David Tolnay <dtolnay@gmail.com>"
@@ -4496,9 +4498,9 @@ rec {
       };
       "syn" = rec {
         crateName = "syn";
-        version = "1.0.80";
+        version = "1.0.81";
         edition = "2018";
-        sha256 = "156i2pkz6rqic3zgfgq5wjhgy1gwmrm93aahsr8nv45x7xia246h";
+        sha256 = "0rh9hvwy75j3krmi4d4x76xb86f753hxr8mlxjbabddyp0cfxbzj";
         authors = [
           "David Tolnay <dtolnay@gmail.com>"
         ];
@@ -4664,9 +4666,9 @@ rec {
       };
       "tinyvec" = rec {
         crateName = "tinyvec";
-        version = "1.5.0";
+        version = "1.5.1";
         edition = "2018";
-        sha256 = "1xwiycwfl80737i952adpn1qawdi20kxr97bsymx14ch9lyjlfzq";
+        sha256 = "1lnqnva56673r0d40586rkzyl2qqcz19wm29q8h5a95n89d1s71c";
         authors = [
           "Lokathor <zefria@gmail.com>"
         ];
@@ -4679,6 +4681,7 @@ rec {
         ];
         features = {
           "alloc" = [ "tinyvec_macros" ];
+          "real_blackbox" = [ "criterion/real_blackbox" ];
           "rustc_1_55" = [ "rustc_1_40" ];
         };
         resolvedDefaultFeatures = [ "alloc" "default" "tinyvec_macros" ];
@@ -4695,9 +4698,9 @@ rec {
       };
       "tokio" = rec {
         crateName = "tokio";
-        version = "1.12.0";
+        version = "1.13.0";
         edition = "2018";
-        sha256 = "1k7g4hyvbibjdvx9y5ppv1hsycx63vg2fiabwhx49a6wvrpl3hn2";
+        sha256 = "1vi9dswv8m6h5h9zh42923i67d0libxxhz2nfzc5ininlc82v2sq";
         authors = [
           "Tokio Contributors <team@tokio.rs>"
         ];
@@ -4794,9 +4797,9 @@ rec {
       };
       "tokio-stream" = rec {
         crateName = "tokio-stream";
-        version = "0.1.7";
+        version = "0.1.8";
         edition = "2018";
-        sha256 = "0zvj8d2i1147s4i3ml3lh3h6fypncjmbw0h1mhck3w2kh9lkybvv";
+        sha256 = "1qwq0y21xprsql4v9y1cm1ymhgw66rznjmnjrjsii27zxy25852h";
         authors = [
           "Tokio Contributors <team@tokio.rs>"
         ];
@@ -6052,9 +6055,9 @@ rec {
       };
       "whoami" = rec {
         crateName = "whoami";
-        version = "1.1.5";
+        version = "1.2.0";
         edition = "2018";
-        sha256 = "05v1nsf82sf9mmgkm2s7pi70zway66s2xg08xf8fqgx9w7z5jfj8";
+        sha256 = "1xzmdsp0d8kvjm99l5a4ly9ivif0dhnf2rw9r7rgnkka4gpcafn3";
         authors = [
           "Jeron Aldaron Lau <jeronlau@plopgrizzly.com>"
         ];

@@ -3,8 +3,9 @@ CREATE TABLE IF NOT EXISTS agents
 (
     id          VARCHAR(26) PRIMARY KEY NOT NULL,
     unique_name TEXT NOT NULL UNIQUE,
-    name       TEXT NOT NULL, 
-    email      TEXT,
+    name        TEXT NOT NULL, 
+    email       TEXT,
+    agent_type  VARCHAR(100) NOT NULL,
     inserted_at INT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 

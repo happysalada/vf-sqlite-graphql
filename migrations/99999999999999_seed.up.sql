@@ -7,3 +7,17 @@ INSERT INTO actions (id, name, input_output) VALUES ('01FBXZJ9JDCZ6YXJY6BVR7DAWT
 INSERT INTO actions (id, name, input_output) VALUES ('01FBZMRP9708ZKQ64RV3A09CSD', 'use', 'Input');
 INSERT INTO units (id, label) VALUES ('01FBXZS196WG2YSN1YKYDSG0W8', 'hour');
 INSERT INTO units (id, label) VALUES ('01FBXZSF3CVKKA8JBAWD7VDG7G', 'each');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8A9QQBV77N1B1YP7R89RR0', 'stacco', 'Stacco', 'stacco@disco.coop', 'Individual');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8AD71VJ3JG9WRP85XN053M', 'irene', 'Irene', 'irene@disco.coop', 'Individual');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8AEBZT3AKMV0DH98ETPFTR', 'sari', 'Sari', 'sari@disco.coop', 'Individual');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8AFR52CMRHZ252Q3DYAFB3', 'ann_marie', 'Ann Marie', 'ann-marie@disco.coop', 'Individual');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8AH141E8512ZMD23D91NMG', 'disco_mothership', 'Disco Mothership', 'disco-mothership@disco.coop', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8AK96JKKJDHTMXM2G43FRA', 'disco_tech_circle', 'Tech Circle', 'tech-circle@disco.coop', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8AMH7M3G7A7DCEDK1BC126', 'disco_net_labs_circle', 'NET.LABS Circle', 'net-labs-circle@disco.coop', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8APN9GNE98A6BVZJNH5MBZ', 'disco_diwo_circle', 'DIWO Circle', 'diwo-circle@disco.coop', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8ARC396DTN96EPHVBJ0BQ0', 'disco_leg_fin_circle', 'LEG.FIN Circle', 'leg-fin-circle@disco.coop', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8ASS73J1YZXDS17J25NWSQ', 'disco_stra_dev_circle', 'STA.DEV Circle', 'stra-dev-circle@disco.coop', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8AV9GR6SE9WA8C9WXPJ5K7', 'disco_dat_ment_circle', 'DAT.MEN Circle', 'dat-men-circle@disco.coop', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8AWJJ71DNYKTZ8MBF90XG1', 'disco_sto_doc_circle', 'STO.DOC Circle', 'sto-doc-circle@disco.coop', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8AYBS82K63N9QERXFZMHTT', 'disco_research_circle', 'RESEARCH Circle', 'research-circle@disco.coop', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FM8B05GFDCPAWGPR0Y7DCKTX', 'disco_community_circle', 'COMMUNITY Circle', 'community-circle@disco.coop', 'Organization');
