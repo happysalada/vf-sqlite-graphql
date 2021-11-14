@@ -78,7 +78,7 @@ in
               records=$(sqlite3 "/var/lib/vf/${instanceConfig.dbName}.db" "SELECT COUNT(*) FROM agents")
               if [[ $records == 0 ]]; then
                   echo "Initializing db for service ${instanceConfig.dbName}"
-                  cat ${serviceConfig.package}/seeds/${instanceConfig.dbName}.sql | sqlite3 "/var/lib/vf/${instanceConfig.dbName}.db
+                  cat ${serviceConfig.package}/seeds/${instanceConfig.dbName}.sql | sqlite3 "/var/lib/vf/${instanceConfig.dbName}.db"
               fi
             '';
             ExecStart = "${serviceConfig.package}/bin/backend";
