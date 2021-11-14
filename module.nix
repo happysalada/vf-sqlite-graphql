@@ -75,7 +75,7 @@ in
               cd ${serviceConfig.package}
               ${pkgs.sqlx-cli}/bin/sqlx db create
               ${pkgs.sqlx-cli}/bin/sqlx migrate run
-              records=$(sqlite3 "/var/lib/vf/${instanceConfig.dbName}.db" "SELECT COUNT(*) FROM agents")
+              records=$(${pkgs.sqlite}/bin/sqlite3 "/var/lib/vf/${instanceConfig.dbName}.db" "SELECT COUNT(*) FROM agents")
               if [[ $records == 0 ]]; then
                   echo "Initializing db for service ${instanceConfig.dbName}"
                   cat ${serviceConfig.package}/seeds/${instanceConfig.dbName}.sql | ${pkgs.sqlite}/bin/sqlite3 "/var/lib/vf/${instanceConfig.dbName}.db"
