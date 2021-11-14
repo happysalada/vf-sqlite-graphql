@@ -70,11 +70,16 @@ in
             Restart = "on-failure";
             RestartSec = 5;
 
-            ExecStartPre = pkgs.writeShellScript "db_create_and_migrade" ''
+            ExecStartPre = pkgs.writeShellScript "db_create_and_migrate" ''
               # go into the directory where the migrations are
               cd ${serviceConfig.package}
               ${pkgs.sqlx-cli}/bin/sqlx db create
               ${pkgs.sqlx-cli}/bin/sqlx migrate run
+              records=$(sqlite3 "/var/lib/vf/${instanceConfig.dbName}.db" "SELECT COUNT(*) FROM agents")
+              if [[ $records == 0 ]] ; do
+                  echo "Initializing db for service ${instanceConfig.dbName}"
+                  cat ${serviceConfig.package}/seeds/${instanceConfig.dbName}.sql | sqlite3 "/var/lib/vf/${instanceConfig.dbName}.db
+              fi
             '';
             ExecStart = "${serviceConfig.package}/bin/backend";
             ExecStop = "${serviceConfig.package}/bin/backend";
