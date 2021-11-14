@@ -20,9 +20,9 @@ CREATE TABLE IF NOT EXISTS plans
 CREATE TABLE IF NOT EXISTS plan_agents
 (
     id                INTEGER PRIMARY KEY NOT NULL,
-    agent_unique_name VARCHAR(100) NOT NULL REFERENCES agents(unique_name),
+    agent_id          VARCHAR(26) NOT NULL REFERENCES agents(id),
     plan_id           VARCHAR(26) NOT NULL REFERENCES plans(id),
     inserted_at       INT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS unique_plan_agents_plan_id_agent_unique_name ON plan_agents (plan_id, agent_unique_name)
+CREATE UNIQUE INDEX IF NOT EXISTS unique_plan_agents_plan_id_agent_id ON plan_agents (plan_id, agent_id)

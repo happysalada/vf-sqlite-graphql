@@ -14,22 +14,6 @@ in
         location of folder for the application dynamic changes
       '';
     };
-    dbName = mkOption {
-      type = types.str;
-      default = "temp";
-      example = "temp";
-      description = ''
-        location of the sqlite db you want to use
-      '';
-    };
-    port = mkOption {
-      type = types.port;
-      default = 8080;
-      example = 8080;
-      description = ''
-        local port on which to run the server
-      '';
-    };
     package = mkOption {
       type = types.package;
       description = "package to run the instance with";
@@ -42,6 +26,30 @@ in
         log level you want for the web server
       '';
     };
+    instances = mkOption {
+      description = "instances of the union service to run. Typically one for each client";
+      default = { };
+      type = types.attrsOf (types.submodule {
+        options = {
+          dbName = mkOption {
+            type = types.str;
+            default = "temp";
+            example = "temp";
+            description = ''
+              name of the sqlite db you want to use
+            '';
+          };
+          port = mkOption {
+            type = types.port;
+            default = 8080;
+            example = 8080;
+            description = ''
+              local port on which to run the server
+            '';
+          };
+        };
+      });
+    };
   };
 
   config = mkIf serviceConfig.enable {
@@ -52,38 +60,41 @@ in
       isSystemUser = true;
     };
 
-    systemd.services.vf-backend = {
-      wantedBy = [ "multi-user.target" ];
-      description = "A backend with graphql and sqlite for valueflows";
-      serviceConfig = {
-        Type = "exec";
-        Restart = "on-failure";
-        RestartSec = 5;
+    systemd.services = lib.mapAttrs'
+      (name: instanceConfig: lib.nameValuePair "vf-backend-${name}"
+        {
+          wantedBy = [ "multi-user.target" ];
+          description = "A backend with graphql and sqlite for valueflows";
+          serviceConfig = {
+            Type = "exec";
+            Restart = "on-failure";
+            RestartSec = 5;
 
-        ExecStartPre = pkgs.writeShellScript "db_create_and_migrade" ''
-          # go into the directory where the migrations are
-          cd ${serviceConfig.package}
-          ${pkgs.sqlx-cli}/bin/sqlx db create
-          ${pkgs.sqlx-cli}/bin/sqlx migrate run
-        '';
-        ExecStart = "${serviceConfig.package}/bin/backend";
-        ExecStop = "${serviceConfig.package}/bin/backend";
+            ExecStartPre = pkgs.writeShellScript "db_create_and_migrade" ''
+              # go into the directory where the migrations are
+              cd ${serviceConfig.package}
+              ${pkgs.sqlx-cli}/bin/sqlx db create
+              ${pkgs.sqlx-cli}/bin/sqlx migrate run
+            '';
+            ExecStart = "${serviceConfig.package}/bin/backend";
+            ExecStop = "${serviceConfig.package}/bin/backend";
 
-        User = "vf";
-        Group = "vf";
+            User = "vf";
+            Group = "vf";
 
-        StateDirectory = "vf";
+            StateDirectory = "vf";
 
-        PrivateTmp = true;
-        ProtectSystem = "full";
-        NoNewPrivileges = true;
-        ReadWritePaths = "${serviceConfig.stateDir}";
-      };
-      environment = {
-        DATABASE_URL = "sqlite:${serviceConfig.stateDir}/${serviceConfig.dbName}.db";
-        HTTP_PORT = toString serviceConfig.port;
-        RUST_LOG = "${serviceConfig.logLevel}";
-      };
-    };
+            PrivateTmp = true;
+            ProtectSystem = "full";
+            NoNewPrivileges = true;
+            ReadWritePaths = "${serviceConfig.stateDir}";
+          };
+          environment = {
+            DATABASE_URL = "sqlite:${serviceConfig.stateDir}/${instanceConfig.dbName}.db";
+            HTTP_PORT = toString instanceConfig.port;
+            RUST_LOG = "${serviceConfig.logLevel}";
+          };
+        })
+      serviceConfig.instances;
   };
 }

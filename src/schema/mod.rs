@@ -56,7 +56,32 @@ impl Agent {
             id: row.get("id"),
             name: row.get("name"),
             unique_name: row.get("unique_name"),
-            agent_type: row.get("type"),
+            agent_type: row.get("agent_type"),
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Clone, GraphQLObject, FromRow, Debug, Default)]
+#[graphql(description = "A relationship between agents")]
+struct AgentRelationship {
+    id: String,
+    subject_id: String,
+    subject: Agent,
+    object_id: String,
+    object: Agent,
+    agent_relation_type_id: String,
+    agent_relation_type: String,
+    inserted_at: String,
+}
+
+impl AgentRelationship {
+    fn from_row(row: SqliteRow) -> Self {
+        AgentRelationship {
+            id: row.get("id"),
+            subject_id: row.get("subject_id"),
+            object_id: row.get("object_id"),
+            agent_relation_type: row.get("agent_relation_type_name"),
             ..Default::default()
         }
     }
@@ -70,7 +95,6 @@ struct Label {
     unique_name: String,
     color: String,
     inserted_at: String,
-    agent_unique_name: String,
 }
 
 impl Label {

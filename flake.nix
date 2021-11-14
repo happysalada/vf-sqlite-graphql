@@ -45,8 +45,6 @@
               darwin.apple_sdk.frameworks.CoreFoundation
             ];
             shellHook = ''
-              alias ls=exa
-              alias find=fd
               export RUST_LOG=info
               export DATABASE_URL=sqlite:db/try.db
               export HTTP_PORT=8080

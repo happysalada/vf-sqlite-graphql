@@ -24,9 +24,10 @@ stdenv.mkDerivation {
   dontUnpack = true;
   dontBuild = true;
   installPhase = ''
-    mkdir -p $out/{bin,migrations}
+    mkdir -p $out/{bin,migrations,seeds}
     cp ${crate}/bin/backend $out/bin
     cp -r $src/migrations $out
+    cp -r $src/seeds $out
   '';
   dontCheck = true;
   dontFixup = true;

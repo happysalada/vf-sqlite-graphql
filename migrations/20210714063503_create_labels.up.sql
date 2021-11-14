@@ -5,6 +5,5 @@ CREATE TABLE IF NOT EXISTS labels
     name               TEXT NOT NULL, 
     unique_name        TEXT NOT NULL UNIQUE,
     color              TEXT,
-    agent_unique_name  VARCHAR(100) NOT NULL REFERENCES agents(unique_name),
     inserted_at        INT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );

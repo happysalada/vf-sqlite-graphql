@@ -1,8 +1,10 @@
-use super::{Action, Agent, Commitment, Label, Plan, Process, ResourceSpecification, Unit};
+use super::{
+    Action, Agent, AgentRelationship, Commitment, Label, Plan, Process, ResourceSpecification, Unit,
+};
 use crate::Context;
 use juniper::{graphql_object, FieldResult};
 use sqlx::Row;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct QueryRoot;
 
@@ -24,11 +26,71 @@ impl QueryRoot {
         Ok(agents.to_vec())
     }
 
+    #[graphql(description = "Get all relations between agents")]
+    async fn agent_relations(
+        context: &Context,
+        agent_id: String,
+    ) -> FieldResult<Vec<AgentRelationship>> {
+        let mut relations = sqlx::query("
+            SELECT agent_relations.id, subject_id, object_id, agent_relation_types.name AS agent_relation_type_name FROM agent_relations
+            JOIN agent_relation_types ON agent_relation_types.id = agent_relations.agent_relation_type_id 
+            WHERE subject_id = ? OR object_id = ?
+            ORDER BY agent_relations.inserted_at DESC
+        ")
+            .bind(&agent_id)
+            .bind(&agent_id)
+            .map(AgentRelationship::from_row)
+            .fetch_all(&context.pool)
+            .await?;
+        let agent_id_set: HashSet<String> = relations.iter().fold(
+            HashSet::<String>::new(),
+            |mut acc: HashSet<String>, relationship: &AgentRelationship| {
+                acc.insert(relationship.subject_id.to_owned());
+                acc.insert(relationship.object_id.to_owned());
+                acc
+            },
+        );
+        let agent_ids = agent_id_set.into_iter().collect::<Vec<_>>().join("', '");
+        let sql = format!(
+            "SELECT * FROM agents WHERE id IN ('{}') ORDER BY inserted_at DESC",
+            &agent_ids
+        );
+        let agents = sqlx::query_as::<_, Agent>(&sql)
+            .bind(agent_ids)
+            .fetch_all(&context.pool)
+            .await?;
+        let agents_hashmap: HashMap<&String, &Agent> = agents.iter().fold(
+            HashMap::<&String, &Agent>::new(),
+            |mut acc: HashMap<&String, &Agent>, agent: &Agent| {
+                acc.entry(&agent.id).or_insert_with(|| agent);
+                acc
+            },
+        );
+        relations.iter_mut().for_each(|p| {
+            p.subject = agents_hashmap
+                .get(&p.subject_id)
+                .expect(&format!(
+                    "subject {} missing for relationship id {}",
+                    &p.subject_id, &p.id
+                ))
+                .to_owned()
+                .to_owned();
+            p.object = agents_hashmap
+                .get(&p.object_id)
+                .expect(&format!(
+                    "object {} missing for relationship id {}",
+                    &p.object_id, &p.id
+                ))
+                .to_owned()
+                .to_owned();
+        });
+        Ok(relations.to_vec())
+    }
     #[graphql(description = "Get all Plans for an agent")]
-    async fn plans(context: &Context, agent_unique_name: String) -> FieldResult<Vec<Plan>> {
+    async fn plans(context: &Context, agent_id: String) -> FieldResult<Vec<Plan>> {
         let plans =
-            sqlx::query("SELECT plans.id, title, description, plans.inserted_at FROM plans JOIN plan_agents ON plan_agents.plan_id = plans.id WHERE plan_agents.agent_unique_name = ? ORDER BY plans.inserted_at DESC")
-                .bind(agent_unique_name)
+            sqlx::query("SELECT plans.id, title, description, plans.inserted_at FROM plans JOIN plan_agents ON plan_agents.plan_id = plans.id WHERE plan_agents.agent_id = ? ORDER BY plans.inserted_at DESC")
+                .bind(agent_id)
                 .map(Plan::from_row)
                 .fetch_all(&context.pool)
                 .await?;
@@ -264,13 +326,10 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get all labels for an agent")]
-    async fn labels(context: &Context, agent_unique_name: String) -> FieldResult<Vec<Label>> {
-        let labels = sqlx::query_as::<_, Label>(
-            "SELECT * FROM labels WHERE labels.agent_unique_name = ? ORDER BY inserted_at DESC",
-        )
-        .bind(agent_unique_name)
-        .fetch_all(&context.pool)
-        .await?;
+    async fn labels(context: &Context) -> FieldResult<Vec<Label>> {
+        let labels = sqlx::query_as::<_, Label>("SELECT * FROM labels ORDER BY inserted_at DESC")
+            .fetch_all(&context.pool)
+            .await?;
         Ok(labels.to_vec())
     }
 
@@ -292,14 +351,10 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get all Resource specifications for an agent")]
-    async fn resource_specifications(
-        context: &Context,
-        agent_unique_name: String,
-    ) -> FieldResult<Vec<ResourceSpecification>> {
+    async fn resource_specifications(context: &Context) -> FieldResult<Vec<ResourceSpecification>> {
         let resource_specifications = sqlx::query_as::<_, ResourceSpecification>(
-            "SELECT * FROM resource_specifications WHERE resource_specifications.agent_unique_name = ? ORDER BY inserted_at DESC",
+            "SELECT * FROM resource_specifications ORDER BY inserted_at DESC",
         )
-        .bind(agent_unique_name)
         .fetch_all(&context.pool)
         .await?;
         Ok(resource_specifications.to_vec())

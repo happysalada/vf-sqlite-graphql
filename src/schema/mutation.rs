@@ -1,4 +1,6 @@
-use super::{Action, Agent, Commitment, Label, Plan, Process, ResourceSpecification, Unit};
+use super::{
+    Action, Agent, AgentType, Commitment, Label, Plan, Process, ResourceSpecification, Unit,
+};
 use crate::Context;
 use futures::future::join_all;
 use juniper::{graphql_object, FieldResult, GraphQLInputObject};
@@ -12,12 +14,13 @@ fn unique_name(name: &str) -> String {
 struct NewAgent {
     name: String,
     email: Option<String>,
+    agent_type: AgentType,
 }
 
 #[derive(GraphQLInputObject, Debug)]
 struct NewPlan {
     title: String,
-    agent_unique_name: String,
+    agent_id: String,
     description: Option<String>,
 }
 
@@ -32,7 +35,6 @@ struct UpdatePlan {
 struct NewLabel {
     name: String,
     color: String,
-    agent_unique_name: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
@@ -58,7 +60,6 @@ struct UpdateProcess {
 #[derive(GraphQLInputObject, Debug)]
 struct NewResourceSpecification {
     name: String,
-    agent_unique_name: String,
 }
 
 #[derive(GraphQLInputObject, Debug)]
@@ -95,8 +96,8 @@ impl MutationRoot {
         let unique_name: String = unique_name(&new_agent.name);
         let inserted_agent = sqlx::query_as::<_, Agent>(
             "
-            INSERT INTO agents (id, name, unique_name, email)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO agents (id, name, unique_name, email, agent_type)
+            VALUES (?, ?, ?, ?, ?)
             RETURNING *
         ",
         )
@@ -104,6 +105,7 @@ impl MutationRoot {
         .bind(new_agent.name)
         .bind(unique_name)
         .bind(new_agent.email)
+        .bind(new_agent.agent_type)
         .fetch_one(&context.pool)
         .await?;
         Ok(inserted_agent)
@@ -121,7 +123,7 @@ impl MutationRoot {
         let ulid = Ulid::new().to_string();
         let unique_name: String = unique_name(&new_label.name);
         let inserted_label = sqlx::query_as::<_, Label>(
-            "INSERT INTO labels (id, name, unique_name, color, agent_unique_name)
+            "INSERT INTO labels (id, name, unique_name, color)
             VALUES (?, ?, ?, ?, ?)
             RETURNING *",
         )
@@ -129,16 +131,15 @@ impl MutationRoot {
         .bind(new_label.name)
         .bind(unique_name)
         .bind(new_label.color)
-        .bind(new_label.agent_unique_name)
         .fetch_one(&context.pool)
         .await?;
         Ok(inserted_label)
     }
 
     #[graphql(description = "Delete a label")]
-    async fn delete_label(context: &Context, unique_name: String) -> FieldResult<i32> {
-        let result = sqlx::query("DELETE FROM labels WHERE unique_name = ?")
-            .bind(unique_name)
+    async fn delete_label(context: &Context, id: String) -> FieldResult<i32> {
+        let result = sqlx::query("DELETE FROM labels WHERE id = ?")
+            .bind(id)
             .execute(&context.pool)
             .await?;
         Ok(result.rows_affected() as i32)
@@ -158,9 +159,9 @@ impl MutationRoot {
         .map(Plan::from_row)
         .fetch_one(&context.pool)
         .await?;
-        sqlx::query("INSERT INTO plan_agents (plan_id, agent_unique_name) VALUES (?, ?)")
+        sqlx::query("INSERT INTO plan_agents (plan_id, agent_id) VALUES (?, ?)")
             .bind(&ulid)
-            .bind(new_plan.agent_unique_name)
+            .bind(new_plan.agent_id)
             .execute(&context.pool)
             .await?;
         Ok(inserted_plan)
@@ -327,15 +328,13 @@ impl MutationRoot {
         let ulid = Ulid::new().to_string();
         let unique_name: String = unique_name(&new_resource_specification.name);
         let inserted_resource_specification = sqlx::query_as::<_, ResourceSpecification>(
-            "INSERT INTO resource_specifications
-                    (id, name, unique_name, agent_unique_name)
+            "INSERT INTO resource_specifications (id, name, unique_name)
                 VALUES (?, ?, ?, ?)
                 RETURNING *",
         )
         .bind(&ulid)
         .bind(new_resource_specification.name)
         .bind(unique_name)
-        .bind(new_resource_specification.agent_unique_name)
         .fetch_one(&context.pool)
         .await?;
         Ok(inserted_resource_specification)
@@ -461,6 +460,15 @@ impl MutationRoot {
     #[graphql(description = "Delete a commitment")]
     async fn delete_commitment(context: &Context, id: String) -> FieldResult<i32> {
         let result = sqlx::query("DELETE FROM commitments WHERE id = ?")
+            .bind(id)
+            .execute(&context.pool)
+            .await?;
+        Ok(result.rows_affected() as i32)
+    }
+
+    #[graphql(description = "Delete a relationship")]
+    async fn delete_relationship(context: &Context, id: String) -> FieldResult<i32> {
+        let result = sqlx::query("DELETE FROM agent_relationships WHERE id = ?")
             .bind(id)
             .execute(&context.pool)
             .await?;
