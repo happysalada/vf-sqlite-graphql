@@ -149,10 +149,9 @@ impl MutationRoot {
     async fn create_plan(context: &Context, new_plan: NewPlan) -> FieldResult<Plan> {
         let ulid = Ulid::new().to_string();
         let inserted_plan = sqlx::query(
-            "
-        INSERT INTO plans (id, title)
-        VALUES (?, ?)
-        RETURNING *",
+            "INSERT INTO plans (id, title)
+            VALUES (?, ?)
+            RETURNING *",
         )
         .bind(&ulid)
         .bind(new_plan.title)
@@ -239,7 +238,7 @@ impl MutationRoot {
         .await?;
         let agents = sqlx::query(
             "
-            SELECT agents.id, name, unique_name
+            SELECT agents.id, name, unique_name, agent_type
             FROM agents
             INNER JOIN process_agents
             ON process_agents.agent_id = agents.id

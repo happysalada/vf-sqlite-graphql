@@ -32,6 +32,7 @@ impl Plan {
 enum AgentType {
     Individual,
     Organization,
+    Project,
 }
 impl Default for AgentType {
     fn default() -> Self {

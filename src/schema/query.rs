@@ -10,6 +10,14 @@ pub struct QueryRoot;
 
 #[graphql_object(Context=Context)]
 impl QueryRoot {
+    #[graphql(description = "Get all agents")]
+    async fn agents(context: &Context) -> FieldResult<Vec<Agent>> {
+        let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents ORDER BY inserted_at DESC")
+            .fetch_all(&context.pool)
+            .await?;
+        Ok(agents.to_vec())
+    }
+
     #[graphql(description = "Get all Individuals")]
     async fn individuals(context: &Context) -> FieldResult<Vec<Agent>> {
         let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE agents.agent_type == 'Individual' ORDER BY inserted_at DESC")
@@ -136,7 +144,7 @@ impl QueryRoot {
 
         let process_id_agents_tuples = sqlx::query(
             "
-            SELECT agents.id, name, unique_name, process_id
+            SELECT agents.id, name, unique_name, agent_type, process_id
             FROM agents 
             INNER JOIN process_agents
             ON process_agents.agent_id = agents.id
