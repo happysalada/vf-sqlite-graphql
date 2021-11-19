@@ -23,7 +23,7 @@ INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FMSZZZB
 INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FMT07SPZZA3D1XXGPNPXV28M', 'sensorica', 'Sensorica', 'sensorica@sensorica.co', 'Organization');
 INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FMT0GQ6TQ2EEWKH1A3Y33WNC', 'greens_for_good', 'Greens for good', 'greens.for.good@sensorica.co', 'Project');
 INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FMT8VXWAWQ2PXWB2K908W2RR', 'rope_maker', 'Rope maker', 'rope.maker@sensorica.co', 'Project');
-INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FMT9SXZZKAT6SV39XEED9Z96', 'joshua_m_pearce_michigan_tech_university', ''Joshua M. Pearce - Michigan Tech University, '', 'Organization');
+INSERT INTO agents (id, unique_name, name, email, agent_type) VALUES ('01FMT9SXZZKAT6SV39XEED9Z96', 'joshua_m_pearce_michigan_tech_university', 'Joshua M. Pearce - Michigan Tech University', '', 'Organization');
 INSERT INTO agent_relation_types (id, name) VALUES ('01FMT02BYT2TSXH3CPG5EWHSWW', 'Affiliate');
 INSERT INTO agent_relation_types (id, name) VALUES ('01FMT0AW37CPHYBJ184YWDTNRX', 'Representative');
 INSERT INTO agent_relation_types (id, name) VALUES ('01FMT02J76M7FB4RCX3QSRN1EX', 'Part of');
