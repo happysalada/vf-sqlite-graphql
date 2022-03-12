@@ -1,5 +1,5 @@
 [package]
-name = "backend"
+name = "vf-graphql-backend"
 version = "0.1.0"
 authors = ["happysalada <raphael@megzari.com>"]
 edition = "2018"

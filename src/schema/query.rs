@@ -15,6 +15,7 @@ impl QueryRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
+        // TODO find a way to type check queries with an enum in the struct
         let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents ORDER BY inserted_at DESC")
             .fetch_all(pool)
             .await?;
