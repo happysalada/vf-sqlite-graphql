@@ -48,7 +48,7 @@ struct Agent {
     unique_name: String,
     email: Option<String>,
     agent_type: AgentType,
-    inserted_at: String,
+    inserted_at: i64,
 }
 
 impl Agent {
@@ -92,8 +92,8 @@ struct Label {
     id: String,
     name: String,
     unique_name: String,
-    color: String,
-    inserted_at: String,
+    color: Option<String>,
+    inserted_at: i64,
 }
 
 impl Label {
@@ -170,7 +170,7 @@ impl Action {
 struct Unit {
     id: String,
     label: String,
-    inserted_at: String,
+    inserted_at: i64,
 }
 
 impl Unit {
@@ -188,8 +188,7 @@ struct ResourceSpecification {
     id: String,
     name: String,
     unique_name: String,
-    inserted_at: String,
-    agent_unique_name: String,
+    inserted_at: i64,
 }
 
 impl ResourceSpecification {

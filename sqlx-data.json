@@ -1,0 +1,325 @@
+{
+  "db": "SQLite",
+  "0a8ac1fa840e7a6db4453e435b75ac208e10958f5456f881a2ec4057442ebf2e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "unique_name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "color",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "inserted_at",
+          "ordinal": 4,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Right": 4
+      }
+    },
+    "query": "INSERT INTO labels (id, name, unique_name, color)\n            VALUES (?, ?, ?, ?)\n            RETURNING *"
+  },
+  "251c80ed51114eb068aa4b6d17f4a77cc12be1cd53854bdb2baa18ae4a7bb6fe": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM processes WHERE id = ?"
+  },
+  "2c0615b0132b055e13cf0a79110c32f1392ef92cbb4b4741e06b61c8ffb77a30": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM agent_relations WHERE id = ?"
+  },
+  "363859bae893743b952fae136b2d8cb660f586e27c22d6b1287bf8aa5f21a7c9": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "unique_name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "color",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "inserted_at",
+          "ordinal": 4,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT * FROM labels ORDER BY inserted_at DESC"
+  },
+  "4de713a08c7f37cbaff61593a6d69d5c12ff77a0601fcbc2b08019b836602458": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM commitments WHERE id = ?"
+  },
+  "54971cc2971d4d564649ff6a8fec2e638db4014b598cf2d6b4e6df41500bc4a8": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM labels WHERE id = ?"
+  },
+  "6203ac8ff660b9bf1ed13cefb2f9113a4b4596c37dd6b0648512d6ab95c0a212": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "unique_name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "inserted_at",
+          "ordinal": 3,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "\n           SELECT *\n           FROM resource_specifications\n           WHERE resource_specifications.id = ?\n           "
+  },
+  "78456b92cb031256da5a940a001975b0e7004d936dcd5e1d2ab2265f7253af7f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "label",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "inserted_at",
+          "ordinal": 2,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT * FROM units ORDER BY inserted_at DESC"
+  },
+  "94dcd1b0da4a8c7b21e0a7d4a7dfb178c98e2ef0ac40764d843475c88031b352": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 8
+      }
+    },
+    "query": "\n            UPDATE commitments\n            SET description = ?,\n                unit_id = ?,\n                action_id = ?,\n                resource_specification_id = ?,\n                quantity = ?,\n                assigned_agent_id = ?,\n                due_at = ?\n            WHERE id = ?"
+  },
+  "9604029db8b55d50e7f152a1c9fa4cc99217a653574560afc7d149f08583983b": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM resource_specifications WHERE unique_name = ?"
+  },
+  "b469bc85fdb5fcc1ed9ada4e675c762a819693e1df5b7d3a49882c5057444b31": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM process_agents WHERE process_id = ?"
+  },
+  "beda5cfdafb947d903933a6855b26e0e93b88ca51e5919337afa7cf932bcb404": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM process_labels WHERE process_id = ?"
+  },
+  "e5ff04797ed871f7014026ed0d946326cfdd30218838e999ef7eedbde3d93769": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM agents WHERE unique_name = ?"
+  },
+  "f1a077d2596aa0bc683ea9e47f4dc5d7ca46b69a7f0242b05e717bd6953ac46d": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "UPDATE plans SET title = ?, description = ? WHERE id = ?"
+  },
+  "f2965decb127e2bff19d11c1a2761d6934d0d05d4a1bf22b16053ae186778696": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "unique_name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "inserted_at",
+          "ordinal": 3,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "INSERT INTO resource_specifications (id, name, unique_name)\n                VALUES (?, ?, ?)\n                RETURNING *"
+  },
+  "f5d4c9efd608b97bb002b34b1fc36ce1dc9305d663682c5a8f6cf04fb99473eb": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "unique_name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "inserted_at",
+          "ordinal": 3,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT * FROM resource_specifications ORDER BY inserted_at DESC"
+  }
+}

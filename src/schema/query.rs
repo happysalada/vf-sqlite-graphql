@@ -1,5 +1,6 @@
 use super::{
-    Action, Agent, AgentRelationship, Commitment, Label, Plan, Process, ResourceSpecification, Unit,
+    Action, Agent, AgentRelationship, AgentType, Commitment, Label, Plan, Process,
+    ResourceSpecification, Unit,
 };
 
 use async_graphql::{Context, Object, Result};
@@ -24,9 +25,12 @@ impl QueryRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE agents.agent_type == 'Individual' ORDER BY inserted_at DESC")
-            .fetch_all(pool)
-            .await?;
+        let agents = sqlx::query_as::<_, Agent>(
+            "SELECT * FROM agents WHERE agents.agent_type == ? ORDER BY inserted_at DESC",
+        )
+        .bind(AgentType::Individual)
+        .fetch_all(pool)
+        .await?;
         Ok(agents.to_vec())
     }
 
@@ -34,9 +38,12 @@ impl QueryRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE agents.agent_type == 'Organization' ORDER BY inserted_at DESC")
-            .fetch_all(pool)
-            .await?;
+        let agents = sqlx::query_as::<_, Agent>(
+            "SELECT * FROM agents WHERE agents.agent_type == ? ORDER BY inserted_at DESC",
+        )
+        .bind(AgentType::Organization)
+        .fetch_all(pool)
+        .await?;
         Ok(agents.to_vec())
     }
 
@@ -351,7 +358,7 @@ impl QueryRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let labels = sqlx::query_as::<_, Label>("SELECT * FROM labels ORDER BY inserted_at DESC")
+        let labels = sqlx::query_as!(Label, "SELECT * FROM labels ORDER BY inserted_at DESC")
             .fetch_all(pool)
             .await?;
         Ok(labels.to_vec())
@@ -372,7 +379,7 @@ impl QueryRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let units = sqlx::query_as::<_, Unit>("SELECT * FROM units ORDER BY inserted_at DESC")
+        let units = sqlx::query_as!(Unit, "SELECT * FROM units ORDER BY inserted_at DESC")
             .fetch_all(pool)
             .await?;
         Ok(units.to_vec())
@@ -385,7 +392,8 @@ impl QueryRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let resource_specifications = sqlx::query_as::<_, ResourceSpecification>(
+        let resource_specifications = sqlx::query_as!(
+            ResourceSpecification,
             "SELECT * FROM resource_specifications ORDER BY inserted_at DESC",
         )
         .fetch_all(pool)

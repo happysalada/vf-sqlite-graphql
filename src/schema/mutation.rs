@@ -125,8 +125,7 @@ impl MutationRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let result = sqlx::query("DELETE FROM agents WHERE unique_name = ?")
-            .bind(unique_name)
+        let result = sqlx::query!("DELETE FROM agents WHERE unique_name = ?", unique_name)
             .execute(pool)
             .await?;
         Ok(result.rows_affected() as i32)
@@ -141,15 +140,16 @@ impl MutationRoot {
             .expect("failed to get connection pool");
         let ulid = Ulid::new().to_string();
         let unique_name: String = unique_name(&new_label.name);
-        let inserted_label = sqlx::query_as::<_, Label>(
+        let inserted_label = sqlx::query_as!(
+            Label,
             "INSERT INTO labels (id, name, unique_name, color)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?)
             RETURNING *",
+            ulid,
+            new_label.name,
+            unique_name,
+            new_label.color
         )
-        .bind(&ulid)
-        .bind(new_label.name)
-        .bind(unique_name)
-        .bind(new_label.color)
         .fetch_one(pool)
         .await?;
         Ok(inserted_label)
@@ -159,8 +159,7 @@ impl MutationRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let result = sqlx::query("DELETE FROM labels WHERE id = ?")
-            .bind(id)
+        let result = sqlx::query!("DELETE FROM labels WHERE id = ?", id)
             .execute(pool)
             .await?;
         Ok(result.rows_affected() as i32)
@@ -197,12 +196,20 @@ impl MutationRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let result = sqlx::query("UPDATE plans SET title = ?, description = ? WHERE id = ?")
-            .bind(update_plan.title)
-            .bind(update_plan.description)
-            .bind(update_plan.id)
-            .execute(pool)
-            .await?;
+        let UpdatePlan {
+            title,
+            description,
+            id,
+            ..
+        } = update_plan;
+        let result = sqlx::query!(
+            "UPDATE plans SET title = ?, description = ? WHERE id = ?",
+            title,
+            description,
+            id
+        )
+        .execute(pool)
+        .await?;
         Ok(result.rows_affected() as i32)
     }
 
@@ -299,12 +306,10 @@ impl MutationRoot {
             .expect("failed to get connection pool");
         // TODO paralelize queries
         let id: String = update_process.id;
-        sqlx::query("DELETE FROM process_labels WHERE process_id = ?")
-            .bind(&id)
+        sqlx::query!("DELETE FROM process_labels WHERE process_id = ?", id)
             .execute(pool)
             .await?;
-        sqlx::query("DELETE FROM process_agents WHERE process_id = ?")
-            .bind(&id)
+        sqlx::query!("DELETE FROM process_agents WHERE process_id = ?", id)
             .execute(pool)
             .await?;
         let new_process_labels = update_process
@@ -350,16 +355,19 @@ impl MutationRoot {
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
         let mut transaction = pool.begin().await?;
-        sqlx::query("DELETE FROM process_labels WHERE process_id = ?")
-            .bind(&process_id)
-            .execute(&mut transaction)
-            .await?;
-        sqlx::query("DELETE FROM process_agents WHERE process_id = ?")
-            .bind(&process_id)
-            .execute(&mut transaction)
-            .await?;
-        let result = sqlx::query("DELETE FROM processes WHERE id = ?")
-            .bind(process_id)
+        sqlx::query!(
+            "DELETE FROM process_labels WHERE process_id = ?",
+            process_id
+        )
+        .execute(&mut transaction)
+        .await?;
+        sqlx::query!(
+            "DELETE FROM process_agents WHERE process_id = ?",
+            process_id
+        )
+        .execute(&mut transaction)
+        .await?;
+        let result = sqlx::query!("DELETE FROM processes WHERE id = ?", process_id)
             .execute(&mut transaction)
             .await?;
         transaction.commit().await?;
@@ -376,14 +384,15 @@ impl MutationRoot {
             .expect("failed to get connection pool");
         let ulid = Ulid::new().to_string();
         let unique_name: String = unique_name(&new_resource_specification.name);
-        let inserted_resource_specification = sqlx::query_as::<_, ResourceSpecification>(
+        let inserted_resource_specification = sqlx::query_as!(
+            ResourceSpecification,
             "INSERT INTO resource_specifications (id, name, unique_name)
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?)
                 RETURNING *",
+            ulid,
+            new_resource_specification.name,
+            unique_name
         )
-        .bind(&ulid)
-        .bind(new_resource_specification.name)
-        .bind(unique_name)
         .fetch_one(pool)
         .await?;
         Ok(inserted_resource_specification)
@@ -397,10 +406,12 @@ impl MutationRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let result = sqlx::query("DELETE FROM resource_specifications WHERE unique_name = ?")
-            .bind(unique_name)
-            .execute(pool)
-            .await?;
+        let result = sqlx::query!(
+            "DELETE FROM resource_specifications WHERE unique_name = ?",
+            unique_name
+        )
+        .execute(pool)
+        .await?;
         Ok(result.rows_affected() as i32)
     }
 
@@ -455,14 +466,15 @@ impl MutationRoot {
         .fetch_one(pool)
         .await?;
         inserted_commitment.unit = Some(unit);
-        let resource_specification = sqlx::query_as::<_, ResourceSpecification>(
+        let resource_specification = sqlx::query_as!(
+            ResourceSpecification,
             "
            SELECT *
            FROM resource_specifications
            WHERE resource_specifications.id = ?
            ",
+            inserted_commitment.resource_specification_id
         )
-        .bind(&inserted_commitment.resource_specification_id)
         .fetch_one(pool)
         .await?;
         inserted_commitment.resource_specification = Some(resource_specification);
@@ -490,7 +502,17 @@ impl MutationRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let result = sqlx::query(
+        let UpdateCommitment {
+            id,
+            description,
+            action_id,
+            quantity,
+            unit_id,
+            resource_specification_id,
+            assigned_agent_id,
+            due_at,
+        } = update_commitment;
+        let result = sqlx::query!(
             "
             UPDATE commitments
             SET description = ?,
@@ -501,15 +523,15 @@ impl MutationRoot {
                 assigned_agent_id = ?,
                 due_at = ?
             WHERE id = ?",
+            description,
+            unit_id,
+            action_id,
+            resource_specification_id,
+            quantity,
+            assigned_agent_id,
+            due_at,
+            id
         )
-        .bind(update_commitment.description)
-        .bind(update_commitment.unit_id)
-        .bind(update_commitment.action_id)
-        .bind(update_commitment.resource_specification_id)
-        .bind(update_commitment.quantity)
-        .bind(update_commitment.assigned_agent_id)
-        .bind(update_commitment.due_at)
-        .bind(update_commitment.id)
         .execute(pool)
         .await?;
         Ok(result.rows_affected() as i32)
@@ -519,8 +541,7 @@ impl MutationRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let result = sqlx::query("DELETE FROM commitments WHERE id = ?")
-            .bind(id)
+        let result = sqlx::query!("DELETE FROM commitments WHERE id = ?", id)
             .execute(pool)
             .await?;
         Ok(result.rows_affected() as i32)
@@ -530,8 +551,7 @@ impl MutationRoot {
         let pool = context
             .data::<SqlitePool>()
             .expect("failed to get connection pool");
-        let result = sqlx::query("DELETE FROM agent_relationships WHERE id = ?")
-            .bind(id)
+        let result = sqlx::query!("DELETE FROM agent_relations WHERE id = ?", id)
             .execute(pool)
             .await?;
         Ok(result.rows_affected() as i32)
