@@ -1,44 +1,53 @@
 use super::{
     Action, Agent, AgentRelationship, Commitment, Label, Plan, Process, ResourceSpecification, Unit,
 };
-use crate::Context;
-use juniper::{graphql_object, FieldResult};
-use sqlx::Row;
+
+use async_graphql::{Context, Object, Result};
+use sqlx::{sqlite::SqlitePool, Row};
 use std::collections::{HashMap, HashSet};
 
 pub struct QueryRoot;
 
-#[graphql_object(Context=Context)]
+#[Object]
 impl QueryRoot {
-    #[graphql(description = "Get all agents")]
-    async fn agents(context: &Context) -> FieldResult<Vec<Agent>> {
+    async fn agents<'ctx>(&self, context: &Context<'ctx>) -> Result<Vec<Agent>> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents ORDER BY inserted_at DESC")
-            .fetch_all(&context.pool)
+            .fetch_all(pool)
             .await?;
         Ok(agents.to_vec())
     }
 
-    #[graphql(description = "Get all Individuals")]
-    async fn individuals(context: &Context) -> FieldResult<Vec<Agent>> {
+    async fn individuals<'ctx>(&self, context: &Context<'ctx>) -> Result<Vec<Agent>> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE agents.agent_type == 'Individual' ORDER BY inserted_at DESC")
-            .fetch_all(&context.pool)
+            .fetch_all(pool)
             .await?;
         Ok(agents.to_vec())
     }
 
-    #[graphql(description = "Get all Organizations")]
-    async fn organizations(context: &Context) -> FieldResult<Vec<Agent>> {
+    async fn organizations<'ctx>(&self, context: &Context<'ctx>) -> Result<Vec<Agent>> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let agents = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE agents.agent_type == 'Organization' ORDER BY inserted_at DESC")
-            .fetch_all(&context.pool)
+            .fetch_all(pool)
             .await?;
         Ok(agents.to_vec())
     }
 
-    #[graphql(description = "Get all relations between agents")]
-    async fn agent_relations(
-        context: &Context,
+    async fn agent_relations<'ctx>(
+        &self,
+        context: &Context<'ctx>,
         agent_id: String,
-    ) -> FieldResult<Vec<AgentRelationship>> {
+    ) -> Result<Vec<AgentRelationship>> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let mut relations = sqlx::query("
             SELECT agent_relations.id, subject_id, object_id, agent_relation_types.name AS agent_relation_type_name FROM agent_relations
             JOIN agent_relation_types ON agent_relation_types.id = agent_relations.agent_relation_type_id 
@@ -48,7 +57,7 @@ impl QueryRoot {
             .bind(&agent_id)
             .bind(&agent_id)
             .map(AgentRelationship::from_row)
-            .fetch_all(&context.pool)
+            .fetch_all(pool)
             .await?;
         let agent_id_set: HashSet<String> = relations.iter().fold(
             HashSet::<String>::new(),
@@ -65,7 +74,7 @@ impl QueryRoot {
         );
         let agents = sqlx::query_as::<_, Agent>(&sql)
             .bind(agent_ids)
-            .fetch_all(&context.pool)
+            .fetch_all(pool)
             .await?;
         let agents_hashmap: HashMap<&String, &Agent> = agents.iter().fold(
             HashMap::<&String, &Agent>::new(),
@@ -94,28 +103,33 @@ impl QueryRoot {
         });
         Ok(relations.to_vec())
     }
-    #[graphql(description = "Get all Plans for an agent")]
-    async fn plans(context: &Context, agent_id: String) -> FieldResult<Vec<Plan>> {
+
+    async fn plans<'ctx>(&self, context: &Context<'ctx>, agent_id: String) -> Result<Vec<Plan>> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let plans =
             sqlx::query("SELECT plans.id, title, description, plans.inserted_at FROM plans JOIN plan_agents ON plan_agents.plan_id = plans.id WHERE plan_agents.agent_id = ? ORDER BY plans.inserted_at DESC")
                 .bind(agent_id)
                 .map(Plan::from_row)
-                .fetch_all(&context.pool)
+                .fetch_all(pool)
                 .await?;
         Ok(plans.to_vec())
     }
 
-    #[graphql(description = "Get a Plan")]
-    async fn plan(context: &Context, plan_id: String) -> FieldResult<Plan> {
+    async fn plan<'ctx>(&self, context: &Context<'ctx>, plan_id: String) -> Result<Plan> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let mut plan = sqlx::query("SELECT * FROM plans WHERE plans.id = ?")
             .bind(plan_id)
             .map(Plan::from_row)
-            .fetch_one(&context.pool)
+            .fetch_one(pool)
             .await?;
         let mut processes = sqlx::query("SELECT * FROM processes WHERE processes.plan_id = ? ")
             .bind(&plan.id)
             .map(Process::from_row)
-            .fetch_all(&context.pool)
+            .fetch_all(pool)
             .await?;
         let process_id_labels_tuples = sqlx::query(
             "
@@ -130,7 +144,7 @@ impl QueryRoot {
         )
         .bind(&plan.id)
         .map(|row| (row.get("process_id"), Label::from_row(row)))
-        .fetch_all(&context.pool)
+        .fetch_all(pool)
         .await?;
         let process_id_labels_hashmap: HashMap<String, Vec<Label>> =
             process_id_labels_tuples.iter().fold(
@@ -155,7 +169,7 @@ impl QueryRoot {
         )
         .bind(&plan.id)
         .map(|row| (row.get("process_id"), Agent::from_row(row)))
-        .fetch_all(&context.pool)
+        .fetch_all(pool)
         .await?;
         let process_id_agents_hashmap: HashMap<String, Vec<Agent>> =
             process_id_agents_tuples.iter().fold(
@@ -177,7 +191,7 @@ impl QueryRoot {
         )
         .bind(&plan.id)
         .map(|row| (row.get("process_id"), Commitment::from_row(row)))
-        .fetch_all(&context.pool)
+        .fetch_all(pool)
         .await?;
         let process_id_commitments_hashmap: HashMap<String, Vec<Commitment>> =
             process_id_commitments_tuples.iter().fold(
@@ -205,7 +219,7 @@ impl QueryRoot {
         )
         .bind(&plan.id)
         .map(|row| (row.get("commitment_id"), Action::from_row(row)))
-        .fetch_all(&context.pool)
+        .fetch_all(pool)
         .await?;
         let commitment_id_action_hashmap: HashMap<String, Action> =
             commitment_id_action_tuples.iter().fold(
@@ -238,7 +252,7 @@ impl QueryRoot {
                 ResourceSpecification::from_row(row),
             )
         })
-        .fetch_all(&context.pool)
+        .fetch_all(pool)
         .await?;
         let commitment_id_resource_specification_hashmap: HashMap<String, ResourceSpecification> =
             commitment_id_resource_specification_tuples.iter().fold(
@@ -264,7 +278,7 @@ impl QueryRoot {
         )
         .bind(&plan.id)
         .map(|row| (row.get("commitment_id"), Unit::from_row(row)))
-        .fetch_all(&context.pool)
+        .fetch_all(pool)
         .await?;
         let commitment_id_unit_hashmap: HashMap<String, Unit> =
             commitment_id_unit_tuples.iter().fold(
@@ -292,7 +306,7 @@ impl QueryRoot {
         )
         .bind(&plan.id)
         .map(|row| (row.get("commitment_id"), Agent::from_row(row)))
-        .fetch_all(&context.pool)
+        .fetch_all(pool)
         .await?;
         let commitment_id_agent_hashmap: HashMap<String, Agent> =
             commitment_id_agent_tuples.iter().fold(
@@ -333,37 +347,48 @@ impl QueryRoot {
         Ok(plan)
     }
 
-    #[graphql(description = "Get all labels for an agent")]
-    async fn labels(context: &Context) -> FieldResult<Vec<Label>> {
+    async fn labels<'ctx>(&self, context: &Context<'ctx>) -> Result<Vec<Label>> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let labels = sqlx::query_as::<_, Label>("SELECT * FROM labels ORDER BY inserted_at DESC")
-            .fetch_all(&context.pool)
+            .fetch_all(pool)
             .await?;
         Ok(labels.to_vec())
     }
 
-    #[graphql(description = "Get all actions")]
-    async fn actions(context: &Context) -> FieldResult<Vec<Action>> {
+    async fn actions<'ctx>(&self, context: &Context<'ctx>) -> Result<Vec<Action>> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let actions =
             sqlx::query_as::<_, Action>("SELECT * FROM actions ORDER BY inserted_at DESC")
-                .fetch_all(&context.pool)
+                .fetch_all(pool)
                 .await?;
         Ok(actions.to_vec())
     }
 
-    #[graphql(description = "Get all units")]
-    async fn units(context: &Context) -> FieldResult<Vec<Unit>> {
+    async fn units<'ctx>(&self, context: &Context<'ctx>) -> Result<Vec<Unit>> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let units = sqlx::query_as::<_, Unit>("SELECT * FROM units ORDER BY inserted_at DESC")
-            .fetch_all(&context.pool)
+            .fetch_all(pool)
             .await?;
         Ok(units.to_vec())
     }
 
-    #[graphql(description = "Get all Resource specifications for an agent")]
-    async fn resource_specifications(context: &Context) -> FieldResult<Vec<ResourceSpecification>> {
+    async fn resource_specifications<'ctx>(
+        &self,
+        context: &Context<'ctx>,
+    ) -> Result<Vec<ResourceSpecification>> {
+        let pool = context
+            .data::<SqlitePool>()
+            .expect("failed to get connection pool");
         let resource_specifications = sqlx::query_as::<_, ResourceSpecification>(
             "SELECT * FROM resource_specifications ORDER BY inserted_at DESC",
         )
-        .fetch_all(&context.pool)
+        .fetch_all(pool)
         .await?;
         Ok(resource_specifications.to_vec())
     }

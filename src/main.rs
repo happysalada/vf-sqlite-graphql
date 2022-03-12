@@ -1,89 +1,79 @@
-use juniper::{http::graphiql, http::GraphQLRequest, EmptySubscription, RootNode};
-use lazy_static::lazy_static;
+use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use async_graphql::{EmptySubscription, Schema};
+use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+use axum::{
+    extract::Extension,
+    handler::Handler,
+    http::{Method, StatusCode},
+    response::{Html, IntoResponse},
+    routing::get,
+    Router,
+};
 use sqlx::sqlite::SqlitePool;
-use trillium::{conn_try, Conn, Handler, Init, State};
-use trillium_logger::Logger;
-use trillium_router::Router;
+use std::net::SocketAddr;
+use tower_http::cors::{Any, CorsLayer};
+
 mod schema;
-use crate::schema::{MutationRoot, QueryRoot};
+use crate::schema::{MutationRoot, QueryRoot, VfSchema};
 
-pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Context>>;
-lazy_static! {
-    static ref SCHEMA: Schema =
-        Schema::new(QueryRoot {}, MutationRoot {}, EmptySubscription::new());
+const GRAPHQL_URL: &str = "/graphql";
+
+async fn graphql_handler(schema: Extension<VfSchema>, req: GraphQLRequest) -> GraphQLResponse {
+    schema.execute(req.into_inner()).await.into()
 }
 
-pub struct Context {
-    pool: SqlitePool,
+async fn graphql_playground() -> impl IntoResponse {
+    Html(playground_source(
+        GraphQLPlaygroundConfig::new(GRAPHQL_URL).subscription_endpoint("/ws"),
+    ))
 }
 
-impl juniper::Context for Context {}
+#[tokio::main]
+async fn main() {
+    // initialize tracing
+    tracing_subscriber::fmt::init();
 
-async fn handle_graphiql(conn: Conn) -> Conn {
-    conn.with_header("content-type", "text/html")
-        .ok(graphiql::graphiql_source("/graphql", None))
+    let db = SqlitePool::connect(&std::env::var("DATABASE_URL").expect("DATABASE_URL is not set"))
+        .await
+        .expect("failed to get a db connection");
+
+    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+        .data(db)
+        .finish();
+
+    let cors = CorsLayer::new()
+        // allow `GET` and `POST` when accessing the resource
+        .allow_methods(vec![Method::GET, Method::POST])
+        // allow requests from any origin
+        .allow_origin(Any);
+    // build our application with a route
+    let app = Router::new()
+        .route(GRAPHQL_URL, get(graphql_playground).post(graphql_handler))
+        .layer(cors)
+        .layer(Extension(schema))
+        .fallback(not_found.into_service());
+
+    let port = std::env::var("HTTP_PORT")
+        .expect("missing http port")
+        .parse::<u16>()
+        .expect("http port should be a number");
+    // run our app with hyper
+    // `axum::Server` is a re-export of `hyper::Server`
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    tracing::debug!("listening on {}", addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
 
-async fn handle_graphql(mut conn: Conn) -> Conn {
-    let raw_body = conn_try!(conn.request_body_string().await, conn);
-    let query: GraphQLRequest = conn_try!(serde_json::from_str(&raw_body), conn);
-    let context = Context {
-        pool: conn.state::<SqlitePool>().unwrap().to_owned(),
-    };
-    let response = query.execute(&SCHEMA, &context).await;
-    let json = conn_try!(serde_json::to_string(&response), conn);
-    conn.ok(json)
-        .with_header("Access-Control-Allow-Origin", "*")
-        .with_header("content-type", "application/json")
+async fn not_found() -> impl IntoResponse {
+    (StatusCode::NOT_FOUND, "nothing to see here")
 }
 
-async fn cors(conn: Conn) -> Conn {
-    conn.with_header("Access-Control-Allow-Origin", "*")
-        .with_header("Access-Control-Allow-Headers", "content-type")
-}
-
-async fn not_found(conn: Conn) -> Conn {
-    let body = format!("Uh oh, I don't have a route for {}", conn.path());
-    conn.with_body(body).with_status(404)
-}
-
-pub fn application() -> impl Handler {
-    env_logger::init();
-    (
-        Logger::new(),
-        Init::new(|_| async move {
-            let db = SqlitePool::connect(
-                &std::env::var("DATABASE_URL").expect("DATABASE_URL is not set"),
-            )
-            .await
-            .expect("failed to get a db connection");
-            State::new(db)
-        }),
-        cors,
-        Router::new()
-            .get("/graphiql", handle_graphiql)
-            .post("/graphql", handle_graphql),
-        not_found,
-    )
-}
-
-fn main() {
-    trillium_tokio::config()
-        .with_port(
-            std::env::var("HTTP_PORT")
-                .expect("missing http port")
-                .parse::<u16>()
-                .expect("http port should be a number"),
-        )
-        .with_host("127.0.0.1")
-        .with_nodelay()
-        .run(application());
-}
-
-#[cfg(test)]
+#[cfg(all(test, feature = "with-db"))]
 mod tests {
     use super::application;
-    use trillium_testing::prelude::*;
 
     #[test]
     fn graphql_agents() {

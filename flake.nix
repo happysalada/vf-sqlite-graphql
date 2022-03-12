@@ -4,13 +4,26 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs";
     rust-overlay.url = "github:oxalica/rust-overlay";
+    crane.url = "github:ipetkov/crane";
+    crane.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, rust-overlay, ... }:
+  outputs = { self, nixpkgs, rust-overlay, crane, ... }:
     let
-      package_overlay = final: prev: {
-        vf-backend = import ./package.nix { pkgs = final; };
-      };
+      package_overlay = final: prev:
+        let system = final.system;
+        in
+        {
+          vf-backend = crane.lib.${system}.buildPackage {
+            src = ./.;
+
+            buildInputs = with final; lib.optionals stdenv.isDarwin [
+              libiconv
+              darwin.apple_sdk.frameworks.Security
+              darwin.apple_sdk.frameworks.CoreFoundation
+            ];
+          };
+        };
       # taken from https://github.com/ngi-nix/project-template/blob/master/flake.nix
       # System types to support.
       supportedSystems = [ "x86_64-linux" "x86_64-darwin" ];
@@ -38,7 +51,6 @@
             buildInputs = with pkgs; [
               rust-bin.stable.latest.default
               sqlite
-              crate2nix
             ] ++ lib.optionals stdenv.isDarwin [
               libiconv
               darwin.apple_sdk.frameworks.Security

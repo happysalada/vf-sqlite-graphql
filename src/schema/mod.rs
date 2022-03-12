@@ -1,4 +1,4 @@
-use juniper::{GraphQLEnum, GraphQLObject};
+use async_graphql::{EmptySubscription, Enum, Schema, SimpleObject};
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use std::default::Default;
 pub mod mutation;
@@ -6,8 +6,9 @@ pub mod query;
 pub use mutation::MutationRoot;
 pub use query::QueryRoot;
 
-#[derive(Clone, GraphQLObject, Default)]
-#[graphql(description = "A plan")]
+pub type VfSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
+
+#[derive(Clone, SimpleObject, Default)]
 struct Plan {
     id: String,
     title: String,
@@ -28,7 +29,7 @@ impl Plan {
     }
 }
 
-#[derive(sqlx::Type, Clone, Debug, GraphQLEnum)]
+#[derive(sqlx::Type, Copy, Clone, Debug, Eq, PartialEq, Enum)]
 enum AgentType {
     Individual,
     Organization,
@@ -40,8 +41,7 @@ impl Default for AgentType {
     }
 }
 
-#[derive(Clone, GraphQLObject, FromRow, Debug, Default)]
-#[graphql(description = "An agent")]
+#[derive(Clone, SimpleObject, FromRow, Debug, Default)]
 struct Agent {
     id: String,
     name: String,
@@ -63,8 +63,7 @@ impl Agent {
     }
 }
 
-#[derive(Clone, GraphQLObject, FromRow, Debug, Default)]
-#[graphql(description = "A relationship between agents")]
+#[derive(Clone, SimpleObject, FromRow, Debug, Default)]
 struct AgentRelationship {
     id: String,
     subject_id: String,
@@ -88,8 +87,7 @@ impl AgentRelationship {
     }
 }
 
-#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
-#[graphql(description = "A label")]
+#[derive(Clone, SimpleObject, Debug, Default, FromRow)]
 struct Label {
     id: String,
     name: String,
@@ -109,8 +107,7 @@ impl Label {
     }
 }
 
-#[derive(Clone, GraphQLObject, Default, Debug)]
-#[graphql(description = "A process")]
+#[derive(Clone, SimpleObject, Default, Debug)]
 struct Process {
     id: String,
     title: String,
@@ -139,7 +136,7 @@ impl Process {
     }
 }
 
-#[derive(sqlx::Type, Clone, Debug, GraphQLEnum)]
+#[derive(sqlx::Type, Clone, Debug, Copy, Eq, PartialEq, Enum)]
 enum InputOutput {
     Input,
     Output,
@@ -150,8 +147,7 @@ impl Default for InputOutput {
     }
 }
 
-#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
-#[graphql(description = "An action")]
+#[derive(Clone, SimpleObject, Debug, Default, FromRow)]
 struct Action {
     id: String,
     name: String,
@@ -170,8 +166,7 @@ impl Action {
     }
 }
 
-#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
-#[graphql(description = "A unit of measure")]
+#[derive(Clone, SimpleObject, Debug, Default, FromRow)]
 struct Unit {
     id: String,
     label: String,
@@ -188,8 +183,7 @@ impl Unit {
     }
 }
 
-#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
-#[graphql(description = "A resource specification")]
+#[derive(Clone, SimpleObject, Debug, Default, FromRow)]
 struct ResourceSpecification {
     id: String,
     name: String,
@@ -209,8 +203,7 @@ impl ResourceSpecification {
     }
 }
 
-#[derive(Clone, GraphQLObject, Debug, Default, FromRow)]
-#[graphql(description = "A commitment")]
+#[derive(Clone, SimpleObject, Debug, Default, FromRow)]
 struct Commitment {
     id: String,
     description: String,
