@@ -6,9 +6,10 @@
     rust-overlay.url = "github:oxalica/rust-overlay";
     crane.url = "github:ipetkov/crane";
     crane.inputs.nixpkgs.follows = "nixpkgs";
+    devshell.url = "github:numtide/devshell";
   };
 
-  outputs = { self, nixpkgs, rust-overlay, crane, ... }:
+  outputs = { self, nixpkgs, rust-overlay, crane, devshell }:
     let
       package_overlay = final: prev:
         let system = final.system;
@@ -35,7 +36,7 @@
       nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; overlays = self.overlays; });
     in
     {
-      overlays = [ rust-overlay.overlay package_overlay ];
+      overlays = [ rust-overlay.overlay package_overlay devshell.overlay ];
       packages = forAllSystems (system:
         {
           inherit (nixpkgsFor.${system}) vf-backend;
@@ -47,20 +48,31 @@
           let
             pkgs = nixpkgsFor.${system};
           in
-          pkgs.mkShell {
-            buildInputs = with pkgs; [
+          pkgs.devshell.mkShell {
+            packages = with pkgs; [
               rust-bin.stable.latest.default
               sqlite
             ] ++ lib.optionals stdenv.isDarwin [
+
               libiconv
               darwin.apple_sdk.frameworks.Security
               darwin.apple_sdk.frameworks.CoreFoundation
             ];
-            shellHook = ''
-              export RUST_LOG=info
-              export DATABASE_URL=sqlite:db/try.db
-              export HTTP_PORT=8080
-            '';
+            env = [
+              {
+                name = "RUST_LOG";
+                value = "info";
+              }
+              {
+                name = "DATABASE_URL";
+                value = "sqlite:db/try.db";
+
+              }
+              {
+                name = "HTTP_PORT";
+                value = "8080";
+              }
+            ];
           }
         );
 
